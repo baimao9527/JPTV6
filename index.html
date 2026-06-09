@@ -1,0 +1,239 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JPTV</title>
+<link rel="icon" href="/jptv.png" type="image/png">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{transition:background .5s ease,color .3s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body.theme-light{background:#f3f4f6;color:#1f2937}
+.theme-light .glass-panel{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid #e5e7eb}
+.theme-light .card{background:rgba(255,255,255,0.9);border:1px solid #e5e7eb}
+body.theme-dark{background:#0f172a;color:#f1f5f9}
+.theme-dark .glass-panel{background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(20px)}
+.theme-dark .card{background:#1e293b;border:1px solid #334155}
+.theme-dark .modal-content{background:#1e293b;border:1px solid #334155}
+.theme-dark .modal-overlay{background:rgba(0,0,0,0.7)}
+.theme-dark .input-field{background:#374151;border:1px solid #4b5563;color:#f1f5f9}
+.theme-light .input-field{background:#fff;border:1px solid #d1d5db;color:#1f2937}
+.card{cursor:pointer;transition:all .2s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;position:relative;border-radius:12px}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 15px -3px rgba(0,0,0,0.1)}
+.channel-logo{height:60px;width:auto;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1));pointer-events:none}
+.channel-name{font-size:.8rem;font-weight:700;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dragging{opacity:.4;border:2px dashed #3b82f6!important}
+.drag-over{border:2px solid #3b82f6!important;transform:scale(1.02)}
+.badge-admin{background:rgba(34,197,94,0.15);color:#16a34a}
+.theme-dark .badge-admin{background:rgba(34,197,94,0.2);color:#4ade80}
+.badge-readonly{background:rgba(107,114,128,0.15);color:#6b7280}
+.theme-dark .badge-readonly{background:rgba(156,163,175,0.15);color:#9ca3af}
+.tab-btn{color:#6b7280;border-bottom:2px solid transparent;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.tab-btn.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.theme-dark .tab-btn{color:#9ca3af}
+.theme-dark .tab-btn.active{color:#60a5fa;border-bottom-color:#60a5fa}
+.input-field{width:100%;padding:.5rem .75rem;border-radius:.5rem;outline:none;font-size:.875rem;transition:border-color .2s}
+.input-field:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,0.2)}
+/* VS Code source editor */
+.source-editor{background:#1e1e1e;border-radius:10px;overflow:hidden;border:1px solid #333}
+.source-editor .editor-tabs{display:flex;background:#252526;border-bottom:1px solid #3c3c3c}
+.source-editor .editor-tab{padding:8px 20px;cursor:pointer;font-size:12px;font-family:Consolas,monospace;color:#969696;background:#2d2d2d;border-right:1px solid #3c3c3c;user-select:none}
+.source-editor .editor-tab.active{color:#fff;background:#1e1e1e}
+.source-editor .editor-tab:hover:not(.active){color:#ccc;background:#333}
+.source-editor .editor-body{position:relative}
+.source-editor textarea{width:100%;min-height:260px;background:#1e1e1e;color:#d4d4d4;border:none;outline:none;resize:vertical;padding:12px;font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:1.6;tab-size:2}
+.source-editor textarea::placeholder{color:#6a6a6a}
+.source-editor textarea::-webkit-scrollbar{width:10px}
+.source-editor textarea::-webkit-scrollbar-track{background:#1e1e1e}
+.source-editor textarea::-webkit-scrollbar-thumb{background:#424242;border-radius:5px}
+/* Modals */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;justify-content:center;align-items:center;padding:1rem;overflow-y:auto}
+.modal-overlay.show{display:flex;background:rgba(0,0,0,0.5)}
+.modal-content{max-width:700px;width:100%;border-radius:16px;padding:1.5rem;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);background:#fff}
+.theme-dark .modal-content{background:#1e293b;border:1px solid #334155}
+.url-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.url-row .note-input{max-width:140px;flex-shrink:0}
+.url-row .remove-btn{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;color:#ef4444;background:transparent;border:none}
+.url-row .remove-btn:hover{background:rgba(239,68,68,0.1)}
+.import-tab{display:none}
+.import-tab.active{display:block}
+.import-preview{border-radius:8px;padding:12px;font-family:Consolas,monospace;font-size:12px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all;background:#f9fafb;border:1px solid #e5e7eb;margin-top:10px}
+.theme-dark .import-preview{background:#1e1e1e;border-color:#333;color:#d4d4d4}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+.btn{padding:.5rem 1rem;border-radius:.75rem;font-weight:600;font-size:.875rem;transition:all .2s;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;border:none}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-ghost{background:transparent;color:inherit}
+.btn-ghost:hover{background:rgba(0,0,0,0.05)}
+.theme-dark .btn-ghost:hover{background:rgba(255,255,255,0.1)}
+.btn-sm{padding:.375rem .75rem;font-size:.75rem;border-radius:.5rem}
+.group-header-input{background:transparent;border:none;border-bottom:2px solid transparent;font-size:1.1rem;font-weight:700;outline:none;width:100%;padding:2px 0;color:inherit}
+.group-header-input:focus{border-bottom-color:#3b82f6}
+</style>
+</head>
+<body class="theme-light min-h-screen p-3 md:p-6">
+<div class="max-w-[1600px] mx-auto">
+<header class="glass-panel p-4 md:p-6 rounded-2xl mb-6 fade-in">
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-11 h-11 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow overflow-hidden flex-shrink-0">
+        <img src="/jptv.png" class="w-9 h-9 object-contain" alt="JPTV">
+      </div>
+      <div>
+        <h1 class="text-xl font-bold">JPTV</h1>
+        <div class="flex gap-2 text-xs font-mono mt-0.5 opacity-60 items-center">
+          <span id="versionDisplay">v5.0</span>
+          <span id="modeBadge" class="px-2 py-0.5 rounded text-xs font-medium"></span>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <button onclick="tt()" class="w-9 h-9 rounded-full bg-current/10 hover:bg-current/20 flex items-center justify-center transition" title="切换主题">
+        <i class="fas fa-sun" id="themeIcon"></i>
+      </button>
+      <div id="adminControls" class="hidden flex-wrap items-center gap-2">
+        <button onclick="oim()" class="btn btn-ghost btn-sm"><i class="fas fa-file-import"></i>导入</button>
+        <div class="relative">
+          <button class="btn btn-ghost btn-sm" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'"><i class="fas fa-download"></i>导出 <i class="fas fa-caret-down ml-1 text-xs"></i></button>
+          <div class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 min-w-[150px] z-20" style="display:none">
+            <a href="/api/data?export=json" target="_blank" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-code w-5"></i>JSON 备份</a>
+            <a href="/api/data?export=m3u" target="_blank" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-list w-5"></i>M3U 订阅</a>
+            <a href="/api/data?export=txt" target="_blank" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-file-lines w-5"></i>TXT 订阅</a>
+          </div>
+        </div>
+        <button onclick="sd()" id="saveBtn" class="btn btn-primary btn-sm"><i class="fas fa-cloud-upload-alt"></i>保存并部署</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div id="loadingContainer" class="text-center py-20">
+  <i class="fas fa-spinner fa-spin text-3xl opacity-40"></i>
+  <p class="mt-3 opacity-50 text-sm">加载中...</p>
+</div>
+<div id="app" class="space-y-6 pb-16"></div>
+<div id="addGroupContainer" class="hidden py-8 text-center">
+  <button onclick="ag()" class="px-8 py-4 rounded-2xl border-2 border-dashed border-current/20 hover:border-blue-500 text-current/50 hover:text-blue-500 transition font-bold flex items-center gap-2 mx-auto text-lg">
+    <i class="fas fa-plus-circle"></i> 添加新分组
+  </button>
+</div>
+</div>
+<!-- Channel Editor Modal -->
+<div id="channelModal" class="modal-overlay" onclick="if(event.target===this)closeChannelModal()">
+  <div class="modal-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold" id="channelModalTitle">编辑频道</h2>
+      <button onclick="ccm()" class="w-8 h-8 rounded-full hover:bg-black/10 dark:hover:bg-white/10 border-0 bg-transparent cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-medium opacity-60 block mb-1">频道名称 <span class="text-red-400">*</span></label>
+        <input id="chName" class="input-field" placeholder="例如: CCTV1 综合">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium opacity-60 block mb-1">频道 ID</label>
+          <input id="chId" class="input-field" placeholder="例如: CCTV1">
+        </div>
+        <div>
+          <label class="text-xs font-medium opacity-60 block mb-1">Logo 标识</label>
+          <input id="chLogo" class="input-field" placeholder="CCTV1 或完整 URL">
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium opacity-60 block mb-2">播放链接 <span class="text-red-400">*</span></label>
+        <div id="urlList" class="space-y-1"></div>
+        <button onclick="aur()" class="mt-2 text-sm text-blue-500 hover:text-blue-600 transition border-0 bg-transparent cursor-pointer"><i class="fas fa-plus-circle"></i> 添加链接</button>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <button onclick="ccm()" class="btn btn-ghost btn-sm">取消</button>
+      <button id="deleteChannelBtn" onclick="dc()" class="btn btn-danger btn-sm" style="display:none"><i class="fas fa-trash"></i> 删除</button>
+      <button onclick="sc()" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> 保存</button>
+    </div>
+  </div>
+</div>
+<!-- Import Modal -->
+<div id="importModal" class="modal-overlay" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold">导入频道数据</h2>
+      <button onclick="cim()" class="w-8 h-8 rounded-full hover:bg-black/10 dark:hover:bg-white/10 border-0 bg-transparent cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex gap-0 mb-4 border-b border-gray-200 dark:border-gray-700">
+      <button onclick="sit('paste')" id="importTabPaste" class="tab-btn active">粘贴代码</button>
+      <button onclick="sit('file')" id="importTabFile" class="tab-btn">选择文件</button>
+    </div>
+    <div id="importPasteTab" class="import-tab active">
+      <textarea id="importTextarea" class="input-field font-mono text-xs" rows="8" placeholder="在此粘贴 M3U / TXT / JSON 格式的内容..." style="resize:vertical"></textarea>
+    </div>
+    <div id="importFileTab" class="import-tab">
+      <input type="file" id="importFileInput" accept=".m3u,.txt,.json,.m3u8,.m3u" class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300">
+      <p class="text-xs opacity-50 mt-2">支持 .m3u / .txt / .json 文件</p>
+    </div>
+    <div class="mt-3 flex items-center gap-2">
+      <span class="text-xs font-medium opacity-60">自动检测格式：</span>
+      <span id="detectedFormat" class="text-xs font-mono px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700">等待输入...</span>
+    </div>
+    <div class="mt-2">
+      <span class="text-xs font-medium opacity-60">导入方式：</span>
+      <label class="inline-flex items-center gap-1 text-sm ml-2"><input type="radio" name="importMode" value="replace" checked> 替换现有数据</label>
+      <label class="inline-flex items-center gap-1 text-sm ml-3"><input type="radio" name="importMode" value="append"> 追加数据</label>
+    </div>
+    <div id="importPreview" class="import-preview hidden"></div>
+    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <button onclick="cim()" class="btn btn-ghost btn-sm">取消</button>
+      <button onclick="ei()" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> 导入</button>
+    </div>
+  </div>
+</div>
+<script>
+let groups=[],isAdmin=!!(new URLSearchParams(location.search).get('token')),currentToken=new URLSearchParams(location.search).get('token')||'',currentTheme=localStorage.getItem('jptv_theme')||'light',sourceMode={},editorContent={},modalState={gi:-1,ci:-1},importDF='';
+function nc(ch){let u=[];if(Array.isArray(ch.url))u=ch.url.map(v=>typeof v==='string'?{url:v,note:''}:v&&typeof v==='object'?{url:v.url||'',note:v.note||''}:null).filter(Boolean);else if(typeof ch.url==='string'&&ch.url)u=[{url:ch.url,note:''}];return{...ch,url:u}}
+function at(){document.body.className='theme-'+currentTheme+' min-h-screen p-3 md:p-6';let i=document.getElementById('themeIcon');if(i)i.className=currentTheme==='dark'?'fas fa-moon':'fas fa-sun'}
+function tt(){currentTheme=currentTheme==='light'?'dark':'light';localStorage.setItem('jptv_theme',currentTheme);at()}
+function gl(l){if(!l)return'/jptv.png';return l.startsWith('http')?l:'https://gcore.jsdelivr.net/gh/fanmingming/live/tv/'+l+'.png'}
+function d2f(d,f){if(f==='json')return JSON.stringify(d,null,2);if(f==='m3u'){let o='';(d.channels||[]).forEach(c=>{(c.url||[]).forEach(u=>{let r=u.url||u;if(!r)return;o+='#EXTINF:-1 tvg-id="'+(c.id||c.name||'')+'" tvg-name="'+c.name+'" tvg-logo="'+gl(c.logo)+'" group-title="'+d.group+'",'+c.name+'\n'+r+'\n'})});return o}if(f==='txt'){let o=d.group+',#genre#\n';(d.channels||[]).forEach(c=>{(c.url||[]).forEach(u=>{let r=u.url||u;if(!r)return;o+=c.name+','+r+'\n'})});return o}return''}
+function f2d(c,f,dg){if(f==='json'){let p=JSON.parse(c);return{group:p.group||'未分组',channels:(p.channels||[]).map(nc)}}if(f==='m3u'||f==='txt'){let pg=f==='m3u'?pm3u(c):ptxt(c),m=pg.find(g=>g.group===dg);return m||pg[0]||null}return null}
+function pm3u(c){let ls=c.split('\n'),gs={},cg='未分组',ce=null;ls.forEach(l=>{l=l.trim();if(!l)return;if(l.startsWith('#EXTINF:')){ce=l;let m=l.match(/group-title="([^"]*)"/);if(m)cg=m[1]||'未分组'}else if(!l.startsWith('#')){if(ce){let nm=ce.match(/,([^,]+)$/),name=nm?nm[1].trim():'未知',lm=ce.match(/tvg-logo="([^"]*)"/),logo=lm?lm[1]:'',im=ce.match(/tvg-id="([^"]*)"/),id=im?im[1]:'';if(!gs[cg])gs[cg]=[];let ex=gs[cg].find(c=>c.name===name);if(ex)ex.url.push({url:l,note:''});else gs[cg].push({name,id,logo,url:[{url:l,note:''}]});ce=null}}});return Object.entries(gs).map(([g,ch])=>({group:g,channels:ch}))}
+function ptxt(c){let ls=c.split('\n'),r=[],cg=null;ls.forEach(l=>{l=l.trim();if(!l)return;if(l.endsWith(',#genre#')){cg=l.replace(',#genre#','').trim();r.push({group:cg,channels:[]})}else if(l.includes(',')){let i=l.indexOf(','),n=l.substring(0,i).trim(),u=l.substring(i+1).trim();if(n&&u){if(!r.length){r.push({group:'未分组',channels:[]});cg='未分组'}let g=r[r.length-1];if(g.group===cg||!cg)g.channels.push({name:n,id:n,logo:'',url:[{url:u,note:''}]})}}});return r}
+function df(c){let t=c.trim();if(!t)return'等待输入...';if(t.startsWith('[')||t.startsWith('{'))return'JSON';if(t.startsWith('#EXTM3U')||t.startsWith('#EXTINF:'))return'M3U';if(t.includes(',#genre#'))return'TXT';return'未知格式'}
+async function init(){at();try{let r=await fetch('/api/data');if(r.ok)groups=await r.json()}catch(e){}groups=groups.map(g=>({...g,channels:(g.channels||[]).map(nc)}));render()}
+function render(){document.getElementById('loadingContainer').style.display='none';let a=document.getElementById('app'),mb=document.getElementById('modeBadge'),ac=document.getElementById('adminControls'),ag=document.getElementById('addGroupContainer');if(isAdmin){mb.textContent='管理员';mb.className='px-2 py-0.5 rounded text-xs font-medium badge-admin';ac.classList.remove('hidden');ag.classList.remove('hidden')}else{mb.textContent='只读模式';mb.className='px-2 py-0.5 rounded text-xs font-medium badge-readonly';ac.classList.add('hidden');ag.classList.add('hidden')}
+if(!groups||!groups.length){a.innerHTML='<div class="text-center py-20 opacity-50"><i class="fas fa-tv text-4xl mb-3"></i><p>暂无频道数据</p></div>';return}
+a.innerHTML=groups.map((g,gi)=>`<div class="glass-panel rounded-2xl p-4 md:p-6 fade-in group-panel" data-gi="${gi}"><div class="flex items-center justify-between mb-4 border-b border-current/10 pb-3">${isAdmin?`<input class="group-header-input" value="${g.group.replace(/"/g,'&quot;')}" onchange="groups[${gi}].group=this.value.trim()||'未命名'" placeholder="分组名称">`:`<h2 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-layer-group text-blue-500 text-sm"></i>${g.group}</h2>`}${isAdmin?`<div class="flex items-center gap-1 flex-shrink-0"><button onclick="mg(${gi},-1)" class="w-7 h-7 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 text-blue-400 ${gi===0?'opacity-20 pointer-events-none':''}"><i class="fas fa-chevron-up text-xs"></i></button><button onclick="mg(${gi},1)" class="w-7 h-7 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 text-blue-400 ${gi===groups.length-1?'opacity-20 pointer-events-none':''}"><i class="fas fa-chevron-down text-xs"></i></button><div class="w-px h-4 bg-current/10 mx-1"></div><button onclick="ts(${gi})" class="px-3 py-1 rounded-lg text-xs font-medium transition ${sourceMode[gi]?'bg-blue-500 text-white':'hover:bg-black/10 dark:hover:bg-white/10'}"><i class="fas fa-code mr-1"></i>${sourceMode[gi]?'频道':'源码'}</button><button onclick="dgc(${gi})" class="w-7 h-7 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 text-red-400"><i class="fas fa-trash-alt text-xs"></i></button></div>`:''}</div>${sourceMode[gi]?se(gi,groups[gi]):cards(g,gi)}</div>`).join('')}
+function cards(g,gi){let chs=g.channels||[];return`<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 card-grid">${chs.map((ch,ci)=>`<div class="card" ${isAdmin?`draggable="true" ondragstart="drs(event,${gi},${ci})" ondragover="event.preventDefault()" ondrop="drc(event,${gi},${ci})"`:`onclick="oc(${gi},${ci})"`} onclick="${isAdmin?`ec(${gi},${ci})`:`oc(${gi},${ci})`}"><img src="${gl(ch.logo)}" class="channel-logo" onerror="this.src='/jptv.png'" alt="${ch.name}"><div class="channel-name">${ch.name}</div></div>`).join('')}${isAdmin?`<div onclick="ec(${gi},-1)" class="card border-2 border-dashed opacity-50 hover:opacity-100 text-blue-500 cursor-pointer"><i class="fas fa-plus text-2xl mb-1"></i><span class="text-xs font-bold">添加频道</span></div>`:''}</div>`}
+function se(gi,g){if(!editorContent[gi]){let d=JSON.parse(JSON.stringify(g));editorContent[gi]={data:d,format:'json',content:d2f(d,'json')}}let ec=editorContent[gi];return`<div class="source-editor"><div class="editor-tabs flex"><div class="editor-tab${ec.format==='json'?' active':''}" onclick="ssf(${gi},'json')">JSON</div><div class="editor-tab${ec.format==='m3u'?' active':''}" onclick="ssf(${gi},'m3u')">M3U</div><div class="editor-tab${ec.format==='txt'?' active':''}" onclick="ssf(${gi},'txt')">TXT</div><div class="editor-actions ml-auto flex gap-2 pr-3"><button onclick="ss(${gi})" class="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center gap-1"><i class="fas fa-check"></i> 保存</button></div></div><div class="editor-body"><textarea id="st_${gi}" class="source-textarea" spellcheck="false" placeholder="在此编辑 ${ec.format.toUpperCase()} 源码..." oninput="osi(${gi})">${ec.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div></div>`}
+function ts(gi){if(sourceMode[gi]){let ta=document.getElementById('st_'+gi);if(ta)editorContent[gi].content=ta.value;try{let nd=f2d(editorContent[gi].content,editorContent[gi].format,groups[gi].group);if(nd&&nd.group&&nd.channels)groups[gi]=nd}catch(e){}delete editorContent[gi];sourceMode[gi]=false}else{sourceMode[gi]=true;let g=groups[gi],d=JSON.parse(JSON.stringify(g));editorContent[gi]={data:d,format:'json',content:d2f(d,'json')}}render()}
+function ss(gi){let ta=document.getElementById('st_'+gi);if(ta)editorContent[gi].content=ta.value;try{let nd=f2d(editorContent[gi].content,editorContent[gi].format,groups[gi].group);if(nd&&nd.group&&Array.isArray(nd.channels)){groups[gi]=nd;editorContent[gi].data=JSON.parse(JSON.stringify(nd));Swal.fire({toast:true,position:'top-end',icon:'success',title:'源码已保存',showConfirmButton:false,timer:1200})}else Swal.fire({toast:true,position:'top-end',icon:'error',title:'数据格式有误',showConfirmButton:false,timer:2000})}catch(e){Swal.fire({toast:true,position:'top-end',icon:'error',title:'解析失败: '+e.message,showConfirmButton:false,timer:2000})}}
+function ssf(gi,nf){let ta=document.getElementById('st_'+gi);if(ta)editorContent[gi].content=ta.value;let ec=editorContent[gi];if(ec.format===nf)return;try{let d=f2d(ec.content,ec.format,groups[gi].group);ec.format=nf;ec.content=d2f(d,nf);ec.data=d}catch(e){Swal.fire({toast:true,position:'top-end',icon:'error',title:'格式转换失败',showConfirmButton:false,timer:2000})}render()}
+function osi(gi){let ta=document.getElementById('st_'+gi);if(ta)editorContent[gi].content=ta.value}
+function oc(gi,ci){if(isAdmin)return;let ch=groups[gi]?.channels?.[ci];if(!ch)return;let u=ch.url||[];if(!u.length)return;let fu=u[0].url||u[0];if(fu&&fu.startsWith('http'))window.open(fu,'_blank')}
+function ec(gi,ci){if(!isAdmin)return;modalState={gi,ci};let isNew=ci===-1||ci>=(groups[gi]?.channels?.length||0),ch=!isNew&&groups[gi]?groups[gi].channels[ci]:{name:'',id:'',logo:'',url:[]};document.getElementById('channelModalTitle').textContent=isNew?'添加频道':'编辑频道';document.getElementById('chName').value=ch.name||'';document.getElementById('chId').value=ch.id||'';document.getElementById('chLogo').value=ch.logo||'';document.getElementById('deleteChannelBtn').style.display=isNew?'none':'inline-flex';let ul=document.getElementById('urlList');ul.innerHTML='';(Array.isArray(ch.url)&&ch.url.length?ch.url:[{url:'',note:''}]).forEach(u=>aur(u.url||'',u.note||''));document.getElementById('channelModal').classList.add('show')}
+function ccm(){document.getElementById('channelModal').classList.remove('show')}
+function aur(uv,nv){let ul=document.getElementById('urlList'),r=document.createElement('div');r.className='url-row';r.innerHTML='<input type="text" class="input-field url-input" placeholder="播放地址 URL" value="'+(uv||'').replace(/"/g,'&quot;')+'"><input type="text" class="input-field note-input" placeholder="备注(可选)" value="'+(nv||'').replace(/"/g,'&quot;')+'"><button onclick="this.parentElement.remove()" class="remove-btn" title="移除链接"><i class="fas fa-times"></i></button>';ul.appendChild(r)}
+function sc(){let{gi,ci}=modalState,n=document.getElementById('chName').value.trim(),id=document.getElementById('chId').value.trim(),lo=document.getElementById('chLogo').value.trim(),urlRows=document.getElementById('urlList').children,urls=[];for(let i=0;i<urlRows.length;i++){let inp=urlRows[i].querySelectorAll('input'),u=inp[0].value.trim(),no=inp[1].value.trim();if(u)urls.push({url:u,note:no})}if(!n){Swal.fire({toast:true,position:'top-end',icon:'error',title:'请输入频道名称',timer:1500});return}if(!urls.length){Swal.fire({toast:true,position:'top-end',icon:'error',title:'至少添加一个播放链接',timer:1500});return}let ch={name:n,id,logo:lo,url:urls};if(ci===-1||ci>=(groups[gi]?.channels?.length||0))groups[gi].channels.push(ch);else groups[gi].channels[ci]=ch;ccm();render()}
+function dc(){let{gi,ci}=modalState;if(ci>=0&&ci<(groups[gi]?.channels?.length||0))Swal.fire({title:'删除频道?',text:'确定要删除 '+groups[gi].channels[ci].name+' 吗?',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'删除',cancelButtonText:'取消'}).then(r=>{if(r.isConfirmed){groups[gi].channels.splice(ci,1);ccm();render()}})}
+function ug(gi,v){groups[gi].group=v.trim()||'未命名'}
+function mg(i,d){let t=i+d;if(t>=0&&t<groups.length){[groups[i],groups[t]]=[groups[t],groups[i]];[sourceMode[i],sourceMode[t]]=[sourceMode[t],sourceMode[i]];[editorContent[i],editorContent[t]]=[editorContent[t],editorContent[i]];render()}}
+function ag(){groups.push({group:'新分组',channels:[]});render();setTimeout(()=>{let p=document.querySelectorAll('.group-panel');if(p.length)p[p.length-1].scrollIntoView({behavior:'smooth',block:'start'})},100)}
+function dgc(gi){Swal.fire({title:'删除分组?',text:'将删除 "'+groups[gi].group+'" 及其所有频道',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'删除',cancelButtonText:'取消'}).then(r=>{if(r.isConfirmed){groups.splice(gi,1);delete sourceMode[gi];delete editorContent[gi];render()}})}
+let ds=null;function drs(e,gi,ci){ds={gi,ci};e.target.classList.add('dragging')}
+function drc(e,tgi,tci){if(!ds)return;let item=groups[ds.gi].channels.splice(ds.ci,1)[0];groups[tgi].channels.splice(tci,0,item);ds=null;render()}
+function oim(){document.getElementById('importTextarea').value='';document.getElementById('importFileInput').value='';document.getElementById('importPreview').classList.add('hidden');document.getElementById('detectedFormat').textContent='等待输入...';importDF='';sit('paste');document.getElementById('importModal').classList.add('show')}
+function cim(){document.getElementById('importModal').classList.remove('show')}
+function sit(t){document.getElementById('importTabPaste').className='tab-btn'+(t==='paste'?' active':'');document.getElementById('importTabFile').className='tab-btn'+(t==='file'?' active':'');document.getElementById('importPasteTab').className='import-tab'+(t==='paste'?' active':'');document.getElementById('importFileTab').className='import-tab'+(t==='file'?' active':'');uid()}
+function uid(){let c='';if(document.getElementById('importPasteTab').classList.contains('active'))c=document.getElementById('importTextarea').value;else{let f=document.getElementById('importFileInput').files[0];if(f){document.getElementById('detectedFormat').textContent='根据文件...';return}}let fmt=df(c);document.getElementById('detectedFormat').textContent=fmt;importDF=fmt;let pv=document.getElementById('importPreview');if(c.trim()){pv.textContent=c.substring(0,500)+(c.length>500?'\n...':'');pv.classList.remove('hidden')}else pv.classList.add('hidden')}
+async function ei(){let c='';if(document.getElementById('importPasteTab').classList.contains('active'))c=document.getElementById('importTextarea').value;else{let fi=document.getElementById('importFileInput');if(fi.files&&fi.files[0])c=await fi.files[0].text()}if(!c.trim()){Swal.fire({toast:true,position:'top-end',icon:'error',title:'请输入或选择要导入的内容',timer:1500});return}let fmt=df(c);if(fmt==='未知格式'){Swal.fire({toast:true,position:'top-end',icon:'error',title:'无法识别内容格式',timer:2000});return}let id;try{if(fmt==='JSON'){id=JSON.parse(c);if(!Array.isArray(id))id=[id]}else if(fmt==='M3U')id=pm3u(c);else if(fmt==='TXT')id=ptxt(c)}catch(e){Swal.fire({toast:true,position:'top-end',icon:'error',title:'解析失败: '+e.message,timer:2000});return}if(!id||!id.length){Swal.fire({toast:true,position:'top-end',icon:'error',title:'未解析到有效数据',timer:1500});return}id=id.map(g=>ncg(g));let mode=document.querySelector('input[name="importMode"]:checked').value;if(mode==='replace')groups=id;else id.forEach(ng=>{let ex=groups.find(g=>g.group===ng.group);if(ex){ng.channels.forEach(nch=>{let dup=ex.channels.find(c=>c.name===nch.name);if(dup)nch.url.forEach(u=>{if(!dup.url.find(d=>d.url===u.url))dup.url.push(u)});else ex.channels.push(nch)})}else groups.push(ng)});cim();render();Swal.fire({toast:true,position:'top-end',icon:'success',title:'已导入 '+id.reduce((s,g)=>s+g.channels.length,0)+' 个频道',showConfirmButton:false,timer:2000})}
+function ncg(g){return{group:g.group||'未分组',channels:(g.channels||[]).map(nc)}}
+async function sd(){let btn=document.getElementById('saveBtn');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 部署中...';btn.disabled=true;try{let r=await fetch('/api/data?token='+encodeURIComponent(currentToken),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newData:groups})});let d=await r.json();if(r.ok)Swal.fire({icon:'success',title:'保存成功',text:'数据已保存，Vercel 将自动重新部署',timer:3000});else throw new Error(d.error||'保存失败')}catch(e){Swal.fire({icon:'error',title:'错误',text:e.message})}finally{btn.innerHTML='<i class="fas fa-cloud-upload-alt"></i> 保存并部署';btn.disabled=false}}
+document.addEventListener('DOMContentLoaded',function(){let ta=document.getElementById('importTextarea');if(ta)ta.addEventListener('input',uid);let fi=document.getElementById('importFileInput');if(fi)fi.addEventListener('change',function(){if(this.files&&this.files[0]){let n=this.files[0].name.toLowerCase();if(n.endsWith('.m3u')||n.endsWith('.m3u8'))document.getElementById('detectedFormat').textContent='M3U';else if(n.endsWith('.txt'))document.getElementById('detectedFormat').textContent='TXT';else if(n.endsWith('.json'))document.getElementById('detectedFormat').textContent='JSON';else document.getElementById('detectedFormat').textContent='根据内容...';importDF=document.getElementById('detectedFormat').textContent;let rd=new FileReader();rd.onload=function(e){let pv=document.getElementById('importPreview'),txt=e.target.result.substring(0,500);pv.textContent=txt+(e.target.result.length>500?'\n...':'');pv.classList.remove('hidden');let d=df(txt);if(d!=='未知格式'){document.getElementById('detectedFormat').textContent=d;importDF=d}};rd.readAsText(this.files[0])}});init()});
+</script>
+</body>
+</html>
