@@ -208,6 +208,10 @@ export default async function handler(req, res) {
     .theme-dark .icon-btn:hover { color: #bfdbfe; background: rgba(96, 165, 250, 0.16); }
     .icon-btn.danger { color: #ef4444; }
     .icon-btn.danger:hover { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
+    .channel-modal { resize: both; overflow: auto; min-width: 560px; min-height: 460px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); }
+    .channel-modal .swal2-html-container { overflow: visible; }
+    .channel-modal .swal2-title { cursor: move; user-select: none; padding-bottom: 0.75rem; }
+    .channel-logo-preview { width: 54px; height: 54px; min-width: 54px; border-radius: 0.85rem; object-fit: contain; padding: 0.35rem; background: var(--glass-bg-strong); border: 1px solid var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.18); }
     .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
     .format-choice label { cursor: pointer; border: 1px solid rgba(127,127,127,0.28); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
     .format-choice input { accent-color: #2563eb; }
@@ -447,13 +451,17 @@ export default async function handler(req, res) {
       const { value, isDenied } = await Swal.fire({
         title: isNew ? '添加频道' : '编辑频道',
         width: 760,
+        customClass: { popup: 'channel-modal' },
         background: currentTheme === 'dark' ? '#1e293b' : '#fff',
         color: currentTheme === 'dark' ? '#fff' : '#333',
         html: \`<div class="space-y-4 text-left">
-          <input id="s-name" placeholder="名称" class="w-full p-2 border rounded bg-transparent" value="\${html(channel.name)}">
+          <div class="flex gap-3 items-center">
+            <img id="s-logo-preview" src="\${html(getLogoUrl(channel.logo))}" onerror="this.src='/jptv.png'" class="channel-logo-preview" alt="Logo">
+            <input id="s-name" placeholder="名称" class="w-full p-2 border rounded bg-transparent" value="\${html(channel.name)}">
+          </div>
           <div class="flex gap-2">
             <input id="s-id" placeholder="ID" class="flex-1 p-2 border rounded bg-transparent" value="\${html(channel.id)}">
-            <input id="s-logo" placeholder="Logo" class="flex-1 p-2 border rounded bg-transparent" value="\${html(channel.logo)}">
+            <input id="s-logo" placeholder="Logo" class="flex-1 p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="updateChannelLogoPreview()">
           </div>
           <div id="sourceRows" class="space-y-2">\${sourceRows}</div>
           <button type="button" onclick="addSourceRow()" class="px-3 py-2 rounded bg-blue-600 text-white text-sm"><i class="fas fa-plus"></i> 添加链接</button>
@@ -462,7 +470,13 @@ export default async function handler(req, res) {
         denyButtonText: '删除',
         confirmButtonText: '保存',
         showCancelButton: true,
-        didOpen: () => { window.addSourceRow = addSourceRow; window.removeSourceRow = removeSourceRow; },
+        didOpen: () => {
+          window.addSourceRow = addSourceRow;
+          window.removeSourceRow = removeSourceRow;
+          window.updateChannelLogoPreview = updateChannelLogoPreview;
+          initDraggableChannelModal();
+          updateChannelLogoPreview();
+        },
         preConfirm: () => {
           const name = document.getElementById('s-name').value.trim();
           const rows = Array.from(document.querySelectorAll('.source-row')).map((row) => ({
@@ -489,6 +503,47 @@ export default async function handler(req, res) {
         <input class="source-note p-2 border rounded bg-transparent text-sm" placeholder="备注，可留空" value="\${html(source.note || '')}">
         <button type="button" onclick="removeSourceRow(this)" class="h-9 rounded bg-red-500/10 text-red-500"><i class="fas fa-trash"></i></button>
       </div>\`;
+    }
+
+    function updateChannelLogoPreview() {
+      const input = document.getElementById('s-logo');
+      const preview = document.getElementById('s-logo-preview');
+      if (!preview) return;
+      preview.src = getLogoUrl(input?.value || '');
+    }
+
+    function initDraggableChannelModal() {
+      const popup = Swal.getPopup();
+      const title = popup?.querySelector('.swal2-title');
+      if (!popup || !title) return;
+
+      popup.style.position = 'fixed';
+      popup.style.margin = '0';
+      popup.style.left = '50%';
+      popup.style.top = '50%';
+      popup.style.transform = 'translate(-50%, -50%)';
+
+      let dragState = null;
+      title.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        const rect = popup.getBoundingClientRect();
+        popup.style.transform = 'none';
+        popup.style.left = rect.left + 'px';
+        popup.style.top = rect.top + 'px';
+        dragState = { startX: event.clientX, startY: event.clientY, left: rect.left, top: rect.top };
+        title.setPointerCapture(event.pointerId);
+      });
+
+      title.addEventListener('pointermove', (event) => {
+        if (!dragState) return;
+        const nextLeft = Math.min(window.innerWidth - 80, Math.max(16, dragState.left + event.clientX - dragState.startX));
+        const nextTop = Math.min(window.innerHeight - 80, Math.max(16, dragState.top + event.clientY - dragState.startY));
+        popup.style.left = nextLeft + 'px';
+        popup.style.top = nextTop + 'px';
+      });
+
+      title.addEventListener('pointerup', () => { dragState = null; });
+      title.addEventListener('pointercancel', () => { dragState = null; });
     }
 
     function addSourceRow() {
