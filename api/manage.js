@@ -240,6 +240,36 @@ export default async function handler(req, res) {
     ::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.10); border-radius: 999px; }
     ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.45); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.58); border: 2px solid transparent; background-clip: padding-box; }
+    @media (max-width: 640px) {
+      body { padding: 0.75rem !important; }
+      .glass-panel { border-radius: 1rem !important; }
+      header.glass-panel { padding: 1rem !important; align-items: stretch !important; }
+      header .w-12.h-12 { width: 2.75rem !important; height: 2.75rem !important; }
+      header h1 { font-size: 1.25rem !important; }
+      #app { padding-bottom: 4rem; }
+      .card { height: 132px; padding: 0.75rem; border-radius: 0.85rem !important; }
+      .channel-logo { height: 52px; margin-bottom: 0.6rem; }
+      .icon-btn { width: 38px; height: 38px; }
+      .source-editor { max-height: 64vh; min-height: 260px; }
+      .source-titlebar { flex-wrap: wrap; gap: 0.45rem; }
+      .source-tabs { width: 100%; overflow-x: auto; }
+      .source-tabs button { flex: 1; min-width: 72px; padding: 0.7rem 0.5rem; }
+      .source-titlebar > .flex.items-center.gap-2 { width: 100%; justify-content: flex-end; padding: 0 0.5rem 0.55rem; }
+      .source-gutter { width: 38px; min-width: 38px; padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+      .source-textarea { width: calc(100% - 38px); font-size: 0.78rem; }
+      .source-row { grid-template-columns: 1fr 42px !important; gap: 0.45rem; }
+      .source-row .source-url { grid-column: 1 / -1; min-height: 42px; }
+      .source-row .source-note { min-height: 42px; }
+      .source-row button { height: 42px; }
+      .channel-logo-preview { width: 52px; height: 52px; min-width: 52px; }
+      .swal2-popup { width: calc(100vw - 1.25rem) !important; padding: 1rem !important; border-radius: 1rem !important; }
+      .swal2-title { font-size: 1.2rem !important; }
+      .swal2-html-container { margin: 0.75rem 0 0 !important; overflow-x: hidden !important; }
+      .swal2-html-container input, .swal2-html-container textarea { font-size: 16px !important; }
+      .swal2-actions { gap: 0.45rem; margin-top: 1rem !important; }
+      .swal2-actions button { min-height: 42px; margin: 0 !important; }
+      .format-choice { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
   </style>
 </head>
 <body class="theme-light min-h-screen p-4 md:p-8">
@@ -257,12 +287,12 @@ export default async function handler(req, res) {
           </div>
         </div>
       </div>
-      <div class="flex flex-wrap items-center justify-center gap-3">
+      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full lg:w-auto">
         <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-current/10 hover:bg-current/20 flex items-center justify-center transition" title="切换主题">
           <i class="fas fa-sun" id="themeIcon"></i>
         </button>
         ${isAuth ? `
-        <div class="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
+        <div class="flex flex-wrap items-center justify-center gap-2 bg-black/5 dark:bg-white/5 p-1 rounded-xl w-full sm:w-auto">
           <button onclick="openExportDialog()" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-download"></i> 导出</button>
           <div class="w-px h-4 bg-current/10 mx-1"></div>
           <button onclick="globalImport()" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-upload"></i> 导入</button>
@@ -348,13 +378,13 @@ export default async function handler(req, res) {
         const sourceOpen = isAuth && sourceState.open === gi;
         return \`
           <div class="glass-panel rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-6 border-b border-current/10 pb-4 gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-current/10 pb-4 gap-4">
               \${isAuth
                 ? \`<input class="text-xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 transition w-full" value="\${html(group.group)}" onchange="raw[\${gi}].group=this.value" placeholder="分组名称">\`
                 : \`<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-layer-group text-blue-500"></i> \${html(group.group)}</h2>\`
               }
               \${isAuth ? \`
-                <div class="flex items-center gap-1 shrink-0">
+                <div class="flex items-center gap-1 shrink-0 self-end sm:self-auto">
                   <button onclick="toggleSource(\${gi})" class="icon-btn" title="源码"><i class="fas fa-code"></i></button>
                   <button onclick="moveGroup(\${gi}, -1)" class="icon-btn \${gi === 0 ? 'opacity-40 pointer-events-none' : ''}" title="上移"><i class="fas fa-arrow-up"></i></button>
                   <button onclick="moveGroup(\${gi}, 1)" class="icon-btn \${gi === raw.length - 1 ? 'opacity-40 pointer-events-none' : ''}" title="下移"><i class="fas fa-arrow-down"></i></button>
@@ -386,7 +416,9 @@ export default async function handler(req, res) {
       const cardCount = group.channels.length + 1;
       const columns = window.innerWidth >= 1024 ? 6 : window.innerWidth >= 768 ? 3 : 2;
       const visualRows = Math.max(1, Math.ceil(cardCount / columns));
-      const editorHeight = Math.min(560, Math.max(220, visualRows * 180 + (visualRows - 1) * 20));
+      const rowHeight = window.innerWidth <= 640 ? 148 : 180;
+      const maxHeight = window.innerWidth <= 640 ? Math.round(window.innerHeight * 0.64) : 560;
+      const editorHeight = Math.min(maxHeight, Math.max(260, visualRows * rowHeight + (visualRows - 1) * 20));
       return \`
         <div class="source-editor rounded-xl" style="--source-height:\${editorHeight}px">
           <div class="source-titlebar flex items-center justify-between">
@@ -481,14 +513,14 @@ export default async function handler(req, res) {
         html: \`<div class="space-y-4 text-left">
           <div class="flex gap-3 items-center">
             <img id="s-logo-preview" src="\${html(getLogoUrl(channel.logo))}" onerror="this.src='/jptv.png'" class="channel-logo-preview" alt="Logo">
-            <input id="s-name" placeholder="名称" class="w-full p-2 border rounded bg-transparent" value="\${html(channel.name)}">
+            <input id="s-name" placeholder="名称" class="w-full min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.name)}">
           </div>
-          <div class="flex gap-2">
-            <input id="s-id" placeholder="ID" class="flex-1 p-2 border rounded bg-transparent" value="\${html(channel.id)}">
-            <input id="s-logo" placeholder="Logo" class="flex-1 p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="updateChannelLogoPreview()">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="s-id" placeholder="ID" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.id)}">
+            <input id="s-logo" placeholder="Logo" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="updateChannelLogoPreview()">
           </div>
           <div id="sourceRows" class="space-y-2">\${sourceRows}</div>
-          <button type="button" onclick="addSourceRow()" class="px-3 py-2 rounded bg-blue-600 text-white text-sm"><i class="fas fa-plus"></i> 添加链接</button>
+          <button type="button" onclick="addSourceRow()" class="w-full sm:w-auto min-h-[42px] px-3 py-2 rounded bg-blue-600 text-white text-sm"><i class="fas fa-plus"></i> 添加链接</button>
         </div>\`,
         showDenyButton: !isNew,
         denyButtonText: '删除',
