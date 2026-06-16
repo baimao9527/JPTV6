@@ -133,46 +133,66 @@ export default async function handler(req, res) {
   <style>
     body { transition: background 0.5s ease, color 0.3s ease; }
     body.theme-light {
-      --glass-bg: rgba(255, 255, 255, 0.66);
-      --glass-bg-strong: rgba(255, 255, 255, 0.78);
-      --glass-border: rgba(148, 163, 184, 0.34);
-      --source-bg: rgba(255, 255, 255, 0.72);
-      --source-bar: rgba(248, 250, 252, 0.82);
+      --glass-bg: rgba(255, 255, 255, 0.58);
+      --glass-bg-strong: rgba(255, 255, 255, 0.72);
+      --glass-border: rgba(148, 163, 184, 0.28);
+      --glass-highlight: rgba(255, 255, 255, 0.72);
+      --glass-shadow: rgba(15, 23, 42, 0.12);
+      --source-bg: rgba(255, 255, 255, 0.68);
+      --source-bar: rgba(248, 250, 252, 0.78);
       --source-code: #1f2937;
       --source-muted: #94a3b8;
       background:
-        radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 32rem),
-        linear-gradient(135deg, #f8fafc 0%, #eef2f7 48%, #e5e7eb 100%);
+        radial-gradient(circle at 12% 10%, rgba(59, 130, 246, 0.18), transparent 28rem),
+        radial-gradient(circle at 84% 0%, rgba(20, 184, 166, 0.14), transparent 26rem),
+        radial-gradient(circle at 50% 92%, rgba(244, 114, 182, 0.10), transparent 24rem),
+        linear-gradient(135deg, #f8fafc 0%, #eef2f7 44%, #e8edf4 100%);
       color: #1f2937;
     }
     body.theme-dark {
-      --glass-bg: rgba(30, 30, 30, 0.68);
-      --glass-bg-strong: rgba(30, 30, 30, 0.82);
-      --glass-border: rgba(255, 255, 255, 0.13);
-      --source-bg: rgba(30, 30, 30, 0.82);
-      --source-bar: rgba(37, 37, 38, 0.86);
+      --glass-bg: rgba(17, 24, 39, 0.56);
+      --glass-bg-strong: rgba(24, 31, 46, 0.72);
+      --glass-border: rgba(148, 163, 184, 0.18);
+      --glass-highlight: rgba(255, 255, 255, 0.10);
+      --glass-shadow: rgba(0, 0, 0, 0.34);
+      --source-bg: rgba(24, 31, 46, 0.78);
+      --source-bar: rgba(30, 41, 59, 0.82);
       --source-code: #d4d4d4;
       --source-muted: #858585;
       background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 34rem),
-        linear-gradient(135deg, #111827 0%, #171717 48%, #0f172a 100%);
+        radial-gradient(circle at 16% 8%, rgba(59, 130, 246, 0.20), transparent 30rem),
+        radial-gradient(circle at 86% 6%, rgba(20, 184, 166, 0.13), transparent 28rem),
+        radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.12), transparent 34rem),
+        linear-gradient(135deg, #0b1020 0%, #111827 42%, #171717 100%);
       color: #f1f5f9;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent 78%);
     }
     .glass-panel {
       background: var(--glass-bg);
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(22px) saturate(145%);
       -webkit-backdrop-filter: blur(22px) saturate(145%);
-      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255,255,255,0.18);
+      box-shadow: 0 20px 56px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
     }
     .card {
       background: var(--glass-bg-strong);
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(16px) saturate(135%);
       -webkit-backdrop-filter: blur(16px) saturate(135%);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 var(--glass-highlight);
     }
     .card { cursor: pointer; transition: all 0.2s ease; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; position: relative; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight); border-color: rgba(96, 165, 250, 0.34); }
     .channel-logo { height: 64px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); pointer-events: none; }
     .dragging { opacity: 0.4; border: 2px dashed #3b82f6 !important; }
     .source-editor {
@@ -187,7 +207,7 @@ export default async function handler(req, res) {
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(22px) saturate(145%);
       -webkit-backdrop-filter: blur(22px) saturate(145%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 36px rgba(15, 23, 42, 0.16);
+      box-shadow: inset 0 1px 0 var(--glass-highlight), 0 18px 42px var(--glass-shadow);
     }
     .source-titlebar { background: var(--source-bar); border-bottom: 1px solid var(--glass-border); color: var(--source-code); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }
     .source-tabs button { border-right: 1px solid currentColor; border-color: rgba(127,127,127,0.24); }
@@ -211,8 +231,15 @@ export default async function handler(req, res) {
     .channel-logo-preview { width: 58px; height: 58px; min-width: 58px; border-radius: 0.95rem; object-fit: contain; padding: 0.45rem; background: linear-gradient(145deg, rgba(255,255,255,0.42), rgba(148,163,184,0.12)); border: 1px solid var(--glass-border); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255,255,255,0.26); }
     .theme-dark .channel-logo-preview { background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(15,23,42,0.28)); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255,255,255,0.12); }
     .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
-    .format-choice label { cursor: pointer; border: 1px solid rgba(127,127,127,0.28); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .format-choice label { cursor: pointer; border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; background: var(--glass-bg); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); box-shadow: inset 0 1px 0 var(--glass-highlight); }
     .format-choice input { accent-color: #2563eb; }
+    .swal2-popup { background: var(--glass-bg-strong) !important; color: inherit !important; border: 1px solid var(--glass-border) !important; backdrop-filter: blur(24px) saturate(150%) !important; -webkit-backdrop-filter: blur(24px) saturate(150%) !important; box-shadow: 0 24px 70px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight) !important; }
+    .swal2-html-container input, .swal2-html-container textarea { background: rgba(255,255,255,0.08) !important; border-color: var(--glass-border) !important; color: inherit !important; }
+    .theme-light .swal2-html-container input, .theme-light .swal2-html-container textarea { background: rgba(255,255,255,0.54) !important; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.10); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.45); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.58); border: 2px solid transparent; background-clip: padding-box; }
   </style>
 </head>
 <body class="theme-light min-h-screen p-4 md:p-8">
