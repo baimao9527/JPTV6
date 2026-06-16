@@ -142,12 +142,24 @@ export default async function handler(req, res) {
     .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     .channel-logo { height: 64px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); pointer-events: none; }
     .dragging { opacity: 0.4; border: 2px dashed #3b82f6 !important; }
-    .source-editor { background: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; overflow: hidden; }
-    .source-titlebar { background: #252526; border-bottom: 1px solid #3c3c3c; color: #cccccc; }
-    .source-tabs button { color: #969696; border-right: 1px solid #3c3c3c; }
-    .source-tabs button.active { background: #1e1e1e; color: #ffffff; }
-    .source-textarea { background: #1e1e1e; color: #d4d4d4; border: 0; outline: none; resize: vertical; tab-size: 2; line-height: 1.55; }
-    .source-gutter { background: #1e1e1e; color: #858585; user-select: none; border-right: 1px solid #2d2d2d; }
+    .source-editor { height: var(--source-height, 360px); min-height: 220px; max-height: 560px; overflow: hidden; display: flex; flex-direction: column; }
+    .theme-light .source-editor { background: #ffffff; color: #1f2937; border: 1px solid #d1d5db; box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
+    .theme-dark .source-editor { background: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; }
+    .theme-light .source-titlebar { background: #f3f4f6; border-bottom: 1px solid #d1d5db; color: #374151; }
+    .theme-dark .source-titlebar { background: #252526; border-bottom: 1px solid #3c3c3c; color: #cccccc; }
+    .source-tabs button { border-right: 1px solid currentColor; border-color: rgba(127,127,127,0.24); }
+    .theme-light .source-tabs button { color: #6b7280; }
+    .theme-dark .source-tabs button { color: #969696; }
+    .theme-light .source-tabs button.active { background: #ffffff; color: #111827; }
+    .theme-dark .source-tabs button.active { background: #1e1e1e; color: #ffffff; }
+    .source-codewrap { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+    .source-textarea { min-width: 720px; min-height: 100%; background: transparent; color: inherit; border: 0; outline: none; resize: none; tab-size: 2; line-height: 1.55; overflow: hidden; }
+    .source-gutter { min-height: 100%; user-select: none; border-right: 1px solid rgba(127,127,127,0.24); }
+    .theme-light .source-gutter { background: #f9fafb; color: #9ca3af; }
+    .theme-dark .source-gutter { background: #1e1e1e; color: #858585; }
+    .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
+    .format-choice label { cursor: pointer; border: 1px solid rgba(127,127,127,0.28); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .format-choice input { accent-color: #2563eb; }
   </style>
 </head>
 <body class="theme-light min-h-screen p-4 md:p-8">
@@ -171,9 +183,7 @@ export default async function handler(req, res) {
         </button>
         ${isAuth ? `
         <div class="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
-          <button onclick="downloadExport('json')" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-database"></i> JSON 备份</button>
-          <button onclick="downloadExport('m3u')" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-list"></i> M3U 订阅</button>
-          <button onclick="downloadExport('txt')" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-file-lines"></i> TXT 订阅</button>
+          <button onclick="openExportDialog()" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-download"></i> 导出</button>
           <div class="w-px h-4 bg-current/10 mx-1"></div>
           <button onclick="globalImport()" class="px-3 py-2 hover:bg-current/10 rounded-lg transition flex items-center gap-2 text-xs font-medium"><i class="fas fa-upload"></i> 导入</button>
         </div>
@@ -293,8 +303,12 @@ export default async function handler(req, res) {
       const content = getGroupSource(group, sourceState.format);
       const rows = Math.max(12, content.split('\\n').length);
       const lineNumbers = Array.from({ length: rows }, (_, index) => index + 1).join('<br>');
+      const cardCount = group.channels.length + 1;
+      const columns = window.innerWidth >= 1024 ? 6 : window.innerWidth >= 768 ? 3 : 2;
+      const visualRows = Math.max(1, Math.ceil(cardCount / columns));
+      const editorHeight = Math.min(560, Math.max(220, visualRows * 180 + (visualRows - 1) * 20));
       return \`
-        <div class="source-editor rounded-xl">
+        <div class="source-editor rounded-xl" style="--source-height:\${editorHeight}px">
           <div class="source-titlebar flex items-center justify-between">
             <div class="source-tabs flex">
               \${['json', 'm3u', 'txt'].map((format) => \`<button onclick="switchSourceFormat('\${format}')" class="px-4 py-2 text-xs font-mono \${sourceState.format === format ? 'active' : ''}">\${format.toUpperCase()}</button>\`).join('')}
@@ -304,9 +318,9 @@ export default async function handler(req, res) {
               <button onclick="toggleSource(\${gi})" class="text-xs px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white"><i class="fas fa-xmark"></i></button>
             </div>
           </div>
-          <div class="flex font-mono text-sm">
+          <div class="source-codewrap flex font-mono text-sm">
             <div id="source-lines-\${gi}" class="source-gutter text-right px-3 py-3 leading-[1.55]">\${lineNumbers}</div>
-            <textarea id="source-editor-\${gi}" rows="\${rows}" oninput="updateLineNumbers(\${gi})" class="source-textarea flex-1 p-3 min-h-[360px]" spellcheck="false">\${html(content)}</textarea>
+            <textarea id="source-editor-\${gi}" rows="\${rows}" oninput="updateLineNumbers(\${gi})" class="source-textarea flex-1 p-3" spellcheck="false">\${html(content)}</textarea>
           </div>
         </div>\`;
     }
@@ -470,6 +484,36 @@ export default async function handler(req, res) {
       });
     }
 
+    async function openExportDialog() {
+      const { value: format } = await Swal.fire({
+        title: '导出频道',
+        width: 560,
+        background: currentTheme === 'dark' ? '#1e293b' : '#fff',
+        color: currentTheme === 'dark' ? '#fff' : '#333',
+        html: formatPickerHtml('export-format', 'json'),
+        showCancelButton: true,
+        confirmButtonText: '导出',
+        cancelButtonText: '取消',
+        preConfirm: () => document.querySelector('input[name="export-format"]:checked')?.value || 'json'
+      });
+      if (format) downloadExport(format);
+    }
+
+    function formatPickerHtml(name, selected = 'json', includeAuto = false) {
+      const items = [
+        ...(includeAuto ? [{ value: 'auto', icon: 'fa-wand-magic-sparkles', label: '自动', desc: '识别格式' }] : []),
+        { value: 'json', icon: 'fa-database', label: 'JSON', desc: '完整备份' },
+        { value: 'm3u', icon: 'fa-list', label: 'M3U', desc: '订阅格式' },
+        { value: 'txt', icon: 'fa-file-lines', label: 'TXT', desc: '订阅格式' }
+      ];
+      return \`<div class="format-choice text-left">\${items.map((item) => \`
+        <label>
+          <input type="radio" name="\${name}" value="\${item.value}" \${item.value === selected ? 'checked' : ''}>
+          <span><i class="fas \${item.icon}"></i></span>
+          <span><strong class="block">\${item.label}</strong><small class="opacity-70">\${item.desc}</small></span>
+        </label>\`).join('')}</div>\`;
+    }
+
     function downloadExport(format) {
       const content = format === 'json' ? JSON.stringify(normalizeAll(raw), null, 2) : format === 'm3u' ? exportM3U(raw) : exportTXT(raw);
       const mime = format === 'json' ? 'application/json' : 'text/plain';
@@ -493,7 +537,10 @@ export default async function handler(req, res) {
       const { value } = await Swal.fire({
         title: '导入频道',
         width: 760,
+        background: currentTheme === 'dark' ? '#1e293b' : '#fff',
+        color: currentTheme === 'dark' ? '#fff' : '#333',
         html: \`<div class="space-y-4 text-left">
+          \${formatPickerHtml('import-format', 'auto', true)}
           <input id="import-file" type="file" accept=".json,.m3u,.m3u8,.txt,application/json,text/plain" class="w-full p-2 border rounded bg-transparent">
           <textarea id="import-code" class="w-full p-3 border rounded bg-transparent font-mono text-xs h-56" placeholder="粘贴 JSON / M3U / TXT 代码"></textarea>
         </div>\`,
@@ -502,15 +549,17 @@ export default async function handler(req, res) {
         preConfirm: async () => {
           const file = document.getElementById('import-file').files[0];
           const pasted = document.getElementById('import-code').value.trim();
-          if (file) return { text: await file.text(), name: file.name };
-          if (pasted) return { text: pasted, name: '' };
+          const selectedFormat = document.querySelector('input[name="import-format"]:checked')?.value || 'auto';
+          if (file) return { text: await file.text(), name: file.name, format: selectedFormat };
+          if (pasted) return { text: pasted, name: '', format: selectedFormat };
           return Swal.showValidationMessage('请选择文件或粘贴代码');
         }
       });
       if (!value) return;
 
       try {
-        const groups = parseImport(value.text, detectFormat(value.text, value.name));
+        const format = value.format === 'auto' ? detectFormat(value.text, value.name) : value.format;
+        const groups = parseImport(value.text, format);
         raw = normalizeAll(groups);
         sourceState.open = null;
         render();
