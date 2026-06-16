@@ -208,10 +208,8 @@ export default async function handler(req, res) {
     .theme-dark .icon-btn:hover { color: #bfdbfe; background: rgba(96, 165, 250, 0.16); }
     .icon-btn.danger { color: #ef4444; }
     .icon-btn.danger:hover { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
-    .channel-modal { resize: both; overflow: auto; min-width: 560px; min-height: 460px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); }
-    .channel-modal .swal2-html-container { overflow: visible; }
-    .channel-modal .swal2-title { cursor: move; user-select: none; padding-bottom: 0.75rem; }
-    .channel-logo-preview { width: 54px; height: 54px; min-width: 54px; border-radius: 0.85rem; object-fit: contain; padding: 0.35rem; background: var(--glass-bg-strong); border: 1px solid var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.18); }
+    .channel-logo-preview { width: 58px; height: 58px; min-width: 58px; border-radius: 0.95rem; object-fit: contain; padding: 0.45rem; background: linear-gradient(145deg, rgba(255,255,255,0.42), rgba(148,163,184,0.12)); border: 1px solid var(--glass-border); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255,255,255,0.26); }
+    .theme-dark .channel-logo-preview { background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(15,23,42,0.28)); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255,255,255,0.12); }
     .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
     .format-choice label { cursor: pointer; border: 1px solid rgba(127,127,127,0.28); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
     .format-choice input { accent-color: #2563eb; }
@@ -451,7 +449,6 @@ export default async function handler(req, res) {
       const { value, isDenied } = await Swal.fire({
         title: isNew ? '添加频道' : '编辑频道',
         width: 760,
-        customClass: { popup: 'channel-modal' },
         background: currentTheme === 'dark' ? '#1e293b' : '#fff',
         color: currentTheme === 'dark' ? '#fff' : '#333',
         html: \`<div class="space-y-4 text-left">
@@ -474,7 +471,6 @@ export default async function handler(req, res) {
           window.addSourceRow = addSourceRow;
           window.removeSourceRow = removeSourceRow;
           window.updateChannelLogoPreview = updateChannelLogoPreview;
-          initDraggableChannelModal();
           updateChannelLogoPreview();
         },
         preConfirm: () => {
@@ -510,40 +506,6 @@ export default async function handler(req, res) {
       const preview = document.getElementById('s-logo-preview');
       if (!preview) return;
       preview.src = getLogoUrl(input?.value || '');
-    }
-
-    function initDraggableChannelModal() {
-      const popup = Swal.getPopup();
-      const title = popup?.querySelector('.swal2-title');
-      if (!popup || !title) return;
-
-      popup.style.position = 'fixed';
-      popup.style.margin = '0';
-      popup.style.left = '50%';
-      popup.style.top = '50%';
-      popup.style.transform = 'translate(-50%, -50%)';
-
-      let dragState = null;
-      title.addEventListener('pointerdown', (event) => {
-        if (event.button !== 0) return;
-        const rect = popup.getBoundingClientRect();
-        popup.style.transform = 'none';
-        popup.style.left = rect.left + 'px';
-        popup.style.top = rect.top + 'px';
-        dragState = { startX: event.clientX, startY: event.clientY, left: rect.left, top: rect.top };
-        title.setPointerCapture(event.pointerId);
-      });
-
-      title.addEventListener('pointermove', (event) => {
-        if (!dragState) return;
-        const nextLeft = Math.min(window.innerWidth - 80, Math.max(16, dragState.left + event.clientX - dragState.startX));
-        const nextTop = Math.min(window.innerHeight - 80, Math.max(16, dragState.top + event.clientY - dragState.startY));
-        popup.style.left = nextLeft + 'px';
-        popup.style.top = nextTop + 'px';
-      });
-
-      title.addEventListener('pointerup', () => { dragState = null; });
-      title.addEventListener('pointercancel', () => { dragState = null; });
     }
 
     function addSourceRow() {
