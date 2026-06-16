@@ -1,7 +1,5 @@
 {
-  "name": "jptv",
-  "version": "5.0.0",
-  "type": "module",
-  "description": "JPTV Channel Manager - Channel grid + Admin SPA",
-  "dependencies": {}
+  "name": "jptv-logo-directory",
+  "version": "4.2.0",
+  "type": "module"
 }
