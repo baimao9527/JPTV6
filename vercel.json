@@ -1,16 +1,51 @@
-﻿{
+{
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/ipv6.json",
+      "destination": "/api/manage?format=json"
+    },
+    {
+      "source": "/ipv6.m3u",
+      "destination": "/api/m3u"
+    },
+    {
+      "source": "/ipv6.txt",
+      "destination": "/api/txt"
+    },
+    {
+      "source": "/",
+      "destination": "/api/manage"
+    },
+    {
+      "source": "/:token/ipv6.m3u",
+      "destination": "/api/manage?token=:token&format=m3u"
+    },
+    {
+      "source": "/:token/ipv6.txt",
+      "destination": "/api/manage?token=:token&format=txt"
+    },
+    {
+      "source": "/:token",
+      "destination": "/api/manage?token=:token"
+    }
   ]
 }
