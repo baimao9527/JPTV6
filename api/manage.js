@@ -132,31 +132,82 @@ export default async function handler(req, res) {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body { transition: background 0.5s ease, color 0.3s ease; }
-    body.theme-light { background: #f3f4f6; color: #1f2937; }
-    .theme-light .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid #e5e7eb; }
-    .theme-light .card { background: rgba(255, 255, 255, 0.9); border: 1px solid #e5e7eb; }
-    body.theme-dark { background: #0f172a; color: #f1f5f9; }
-    .theme-dark .glass-panel { background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
-    .theme-dark .card { background: #1e293b; border: 1px solid #334155; }
+    body.theme-light {
+      --glass-bg: rgba(255, 255, 255, 0.66);
+      --glass-bg-strong: rgba(255, 255, 255, 0.78);
+      --glass-border: rgba(148, 163, 184, 0.34);
+      --source-bg: rgba(255, 255, 255, 0.72);
+      --source-bar: rgba(248, 250, 252, 0.82);
+      --source-code: #1f2937;
+      --source-muted: #94a3b8;
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 32rem),
+        linear-gradient(135deg, #f8fafc 0%, #eef2f7 48%, #e5e7eb 100%);
+      color: #1f2937;
+    }
+    body.theme-dark {
+      --glass-bg: rgba(30, 30, 30, 0.68);
+      --glass-bg-strong: rgba(30, 30, 30, 0.82);
+      --glass-border: rgba(255, 255, 255, 0.13);
+      --source-bg: rgba(30, 30, 30, 0.82);
+      --source-bar: rgba(37, 37, 38, 0.86);
+      --source-code: #d4d4d4;
+      --source-muted: #858585;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 34rem),
+        linear-gradient(135deg, #111827 0%, #171717 48%, #0f172a 100%);
+      color: #f1f5f9;
+    }
+    .glass-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(22px) saturate(145%);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .card {
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px) saturate(135%);
+      -webkit-backdrop-filter: blur(16px) saturate(135%);
+    }
     .card { cursor: pointer; transition: all 0.2s ease; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; position: relative; }
     .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     .channel-logo { height: 64px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); pointer-events: none; }
     .dragging { opacity: 0.4; border: 2px dashed #3b82f6 !important; }
-    .source-editor { height: var(--source-height, 360px); min-height: 220px; max-height: 560px; overflow: hidden; display: flex; flex-direction: column; }
-    .theme-light .source-editor { background: #ffffff; color: #1f2937; border: 1px solid #d1d5db; box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
-    .theme-dark .source-editor { background: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; }
-    .theme-light .source-titlebar { background: #f3f4f6; border-bottom: 1px solid #d1d5db; color: #374151; }
-    .theme-dark .source-titlebar { background: #252526; border-bottom: 1px solid #3c3c3c; color: #cccccc; }
+    .source-editor {
+      height: var(--source-height, 360px);
+      min-height: 220px;
+      max-height: 560px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--source-bg);
+      color: var(--source-code);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(22px) saturate(145%);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 36px rgba(15, 23, 42, 0.16);
+    }
+    .source-titlebar { background: var(--source-bar); border-bottom: 1px solid var(--glass-border); color: var(--source-code); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }
     .source-tabs button { border-right: 1px solid currentColor; border-color: rgba(127,127,127,0.24); }
-    .theme-light .source-tabs button { color: #6b7280; }
-    .theme-dark .source-tabs button { color: #969696; }
-    .theme-light .source-tabs button.active { background: #ffffff; color: #111827; }
-    .theme-dark .source-tabs button.active { background: #1e1e1e; color: #ffffff; }
-    .source-codewrap { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-    .source-textarea { min-width: 720px; min-height: 100%; background: transparent; color: inherit; border: 0; outline: none; resize: none; tab-size: 2; line-height: 1.55; overflow: hidden; }
-    .source-gutter { min-height: 100%; user-select: none; border-right: 1px solid rgba(127,127,127,0.24); }
-    .theme-light .source-gutter { background: #f9fafb; color: #9ca3af; }
-    .theme-dark .source-gutter { background: #1e1e1e; color: #858585; }
+    .source-tabs button { color: var(--source-muted); }
+    .source-tabs button.active { background: var(--source-bg); color: var(--source-code); font-weight: 700; }
+    .source-codewrap { flex: 1; min-height: 0; overflow: hidden; overscroll-behavior: contain; }
+    .source-textarea { width: calc(100% - 44px); min-width: 0; height: 100%; background: transparent; color: inherit; border: 0; outline: none; resize: none; tab-size: 2; line-height: 1.55; overflow: auto; white-space: pre; }
+    .source-gutter { width: 44px; min-width: 44px; height: 100%; overflow: hidden; user-select: none; border-right: 1px solid rgba(127,127,127,0.24); }
+    .source-gutter { background: var(--source-bg); color: var(--source-muted); }
+    .source-action { height: 30px; min-width: 34px; border-radius: 0.5rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-weight: 700; border: 1px solid transparent; transition: all 0.15s ease; }
+    .source-action.apply { background: #2563eb; color: #ffffff; border-color: rgba(255,255,255,0.18); box-shadow: 0 6px 14px rgba(37, 99, 235, 0.28); }
+    .source-action.apply:hover { background: #1d4ed8; }
+    .source-action.close { background: rgba(148, 163, 184, 0.18); color: var(--source-code); border-color: var(--glass-border); }
+    .source-action.close:hover { background: rgba(239, 68, 68, 0.14); color: #ef4444; border-color: rgba(239, 68, 68, 0.28); }
+    .icon-btn { width: 34px; height: 34px; border-radius: 0.65rem; display: inline-flex; align-items: center; justify-content: center; background: rgba(148, 163, 184, 0.14); border: 1px solid var(--glass-border); color: #2563eb; transition: all 0.15s ease; }
+    .icon-btn:hover { background: rgba(37, 99, 235, 0.14); color: #1d4ed8; transform: translateY(-1px); }
+    .theme-dark .icon-btn { color: #93c5fd; background: rgba(255, 255, 255, 0.08); }
+    .theme-dark .icon-btn:hover { color: #bfdbfe; background: rgba(96, 165, 250, 0.16); }
+    .icon-btn.danger { color: #ef4444; }
+    .icon-btn.danger:hover { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
     .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
     .format-choice label { cursor: pointer; border: 1px solid rgba(127,127,127,0.28); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
     .format-choice input { accent-color: #2563eb; }
@@ -275,10 +326,10 @@ export default async function handler(req, res) {
               }
               \${isAuth ? \`
                 <div class="flex items-center gap-1 shrink-0">
-                  <button onclick="toggleSource(\${gi})" class="p-2 text-blue-400" title="源码"><i class="fas fa-code"></i></button>
-                  <button onclick="moveGroup(\${gi}, -1)" class="p-2 text-blue-400 \${gi === 0 ? 'opacity-20' : ''}" title="上移"><i class="fas fa-arrow-up"></i></button>
-                  <button onclick="moveGroup(\${gi}, 1)" class="p-2 text-blue-400 \${gi === raw.length - 1 ? 'opacity-20' : ''}" title="下移"><i class="fas fa-arrow-down"></i></button>
-                  <button onclick="deleteGroup(\${gi})" class="text-red-400 p-2" title="删除"><i class="fas fa-trash-alt"></i></button>
+                  <button onclick="toggleSource(\${gi})" class="icon-btn" title="源码"><i class="fas fa-code"></i></button>
+                  <button onclick="moveGroup(\${gi}, -1)" class="icon-btn \${gi === 0 ? 'opacity-40 pointer-events-none' : ''}" title="上移"><i class="fas fa-arrow-up"></i></button>
+                  <button onclick="moveGroup(\${gi}, 1)" class="icon-btn \${gi === raw.length - 1 ? 'opacity-40 pointer-events-none' : ''}" title="下移"><i class="fas fa-arrow-down"></i></button>
+                  <button onclick="deleteGroup(\${gi})" class="icon-btn danger" title="删除"><i class="fas fa-trash-alt"></i></button>
                 </div>\` : ''}
             </div>
             \${sourceOpen ? renderSourceEditor(group, gi) : renderChannelGrid(group, gi)}
@@ -314,13 +365,13 @@ export default async function handler(req, res) {
               \${['json', 'm3u', 'txt'].map((format) => \`<button onclick="switchSourceFormat('\${format}')" class="px-4 py-2 text-xs font-mono \${sourceState.format === format ? 'active' : ''}">\${format.toUpperCase()}</button>\`).join('')}
             </div>
             <div class="flex items-center gap-2 px-3">
-              <button onclick="applyGroupSource(\${gi})" class="text-xs px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white"><i class="fas fa-check"></i> 应用</button>
-              <button onclick="toggleSource(\${gi})" class="text-xs px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white"><i class="fas fa-xmark"></i></button>
+              <button onclick="applyGroupSource(\${gi})" class="source-action apply text-xs px-3"><i class="fas fa-check"></i> 应用</button>
+              <button onclick="toggleSource(\${gi})" class="source-action close text-xs" title="关闭"><i class="fas fa-xmark"></i></button>
             </div>
           </div>
           <div class="source-codewrap flex font-mono text-sm">
             <div id="source-lines-\${gi}" class="source-gutter text-right px-3 py-3 leading-[1.55]">\${lineNumbers}</div>
-            <textarea id="source-editor-\${gi}" rows="\${rows}" oninput="updateLineNumbers(\${gi})" class="source-textarea flex-1 p-3" spellcheck="false">\${html(content)}</textarea>
+            <textarea id="source-editor-\${gi}" rows="\${rows}" oninput="updateLineNumbers(\${gi})" onscroll="syncSourceScroll(\${gi})" class="source-textarea flex-1 p-3" spellcheck="false">\${html(content)}</textarea>
           </div>
         </div>\`;
     }
@@ -357,6 +408,13 @@ export default async function handler(req, res) {
       const gutter = document.getElementById('source-lines-' + gi);
       const count = Math.max(12, editor.value.split('\\n').length);
       gutter.innerHTML = Array.from({ length: count }, (_, index) => index + 1).join('<br>');
+      syncSourceScroll(gi);
+    }
+
+    function syncSourceScroll(gi) {
+      const editor = document.getElementById('source-editor-' + gi);
+      const gutter = document.getElementById('source-lines-' + gi);
+      if (editor && gutter) gutter.scrollTop = editor.scrollTop;
     }
 
     function toggleSource(gi) {
