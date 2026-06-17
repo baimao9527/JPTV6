@@ -55,7 +55,11 @@ async function saveToVercel(newData) {
 
   const targetEnvIds = listData.envs ? listData.envs.filter((env) => env.key === 'CHANNELS_DATA').map((env) => env.id) : [];
   for (const id of targetEnvIds) {
-    await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${id}`, { method: 'DELETE', headers });
+    const deleteRes = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${id}`, { method: 'DELETE', headers });
+    if (!deleteRes.ok) {
+      const deleteData = await deleteRes.json().catch(() => ({}));
+      throw new Error(deleteData.error?.message || '删除旧频道环境变量失败');
+    }
   }
 
   const envRes = await fetch(`https://api.vercel.com/v10/projects/${projectId}/env`, {
@@ -71,7 +75,7 @@ async function saveToVercel(newData) {
   const envData = await envRes.json();
   if (!envRes.ok) throw new Error(envData.error?.message || '保存频道数据失败');
 
-  await fetch('https://api.vercel.com/v13/deployments', {
+  const deployRes = await fetch('https://api.vercel.com/v13/deployments', {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -85,11 +89,19 @@ async function saveToVercel(newData) {
       }
     })
   });
+  const deployData = await deployRes.json().catch(() => ({}));
+  if (!deployRes.ok) throw new Error(deployData.error?.message || '触发 Vercel 部署失败');
+
+  return {
+    deploymentId: deployData.id || '',
+    deploymentUrl: deployData.url || ''
+  };
 }
 
 export default async function handler(req, res) {
   const token = req.query.token || '';
   const isAuth = token === config.adminToken;
+  const isListAuth = Boolean(config.listToken) && token === config.listToken;
   const currentVersion = config.currentVersion;
   let channels = getChannels();
 
@@ -103,7 +115,7 @@ export default async function handler(req, res) {
   }
 
   if (isM3UReq || isTXTReq) {
-    if (!isAuth) return res.status(401).send('Unauthorized: Invalid Admin Token');
+    if (!isListAuth) return res.status(401).send('Unauthorized: Invalid List Token');
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return res.status(200).send(isM3UReq ? generateM3U(channels) : generateTXT(channels));
   }
@@ -113,8 +125,8 @@ export default async function handler(req, res) {
 
     try {
       const newData = normalizeChannels(req.body?.newData || []);
-      await saveToVercel(newData);
-      return res.json({ success: true });
+      const deployment = await saveToVercel(newData);
+      return res.json({ success: true, deployment });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -131,7 +143,8 @@ export default async function handler(req, res) {
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    body { transition: background 0.5s ease, color 0.3s ease; }
+    body { transition: background 0.55s ease, color 0.32s ease; }
+    body.theme-switching, body.theme-switching * { transition-duration: 0.38s !important; transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important; }
     body.theme-light {
       --glass-bg: rgba(255, 255, 255, 0.58);
       --glass-bg-strong: rgba(255, 255, 255, 0.72);
@@ -183,6 +196,7 @@ export default async function handler(req, res) {
       backdrop-filter: blur(22px) saturate(145%);
       -webkit-backdrop-filter: blur(22px) saturate(145%);
       box-shadow: 0 20px 56px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
+      transition: background 0.38s ease, border-color 0.38s ease, box-shadow 0.38s ease, color 0.28s ease;
     }
     .card {
       background: var(--glass-bg-strong);
@@ -190,6 +204,7 @@ export default async function handler(req, res) {
       backdrop-filter: blur(16px) saturate(135%);
       -webkit-backdrop-filter: blur(16px) saturate(135%);
       box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 var(--glass-highlight);
+      transition: background 0.38s ease, border-color 0.38s ease, box-shadow 0.38s ease, transform 0.2s ease, color 0.28s ease;
     }
     .card { cursor: pointer; transition: all 0.2s ease; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; position: relative; }
     .card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight); border-color: rgba(96, 165, 250, 0.34); }
@@ -351,14 +366,20 @@ export default async function handler(req, res) {
     }
 
     function applyTheme() {
-      document.body.className = 'theme-' + currentTheme + ' min-h-screen p-4 md:p-8';
+      const isSwitching = document.body.classList.contains('theme-switching');
+      document.body.className = 'theme-' + currentTheme + ' min-h-screen p-4 md:p-8' + (isSwitching ? ' theme-switching' : '');
       document.getElementById('themeIcon').className = currentTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
     }
 
     function toggleTheme() {
+      document.body.classList.add('theme-switching');
       currentTheme = currentTheme === 'light' ? 'dark' : 'light';
       localStorage.setItem('jptv_theme', currentTheme);
       applyTheme();
+      window.clearTimeout(window.__themeSwitchTimer);
+      window.__themeSwitchTimer = window.setTimeout(() => {
+        document.body.classList.remove('theme-switching');
+      }, 420);
     }
 
     function getLogoUrl(logo) {
@@ -780,8 +801,17 @@ export default async function handler(req, res) {
 
     async function saveData() {
       const btn = document.getElementById('saveBtn');
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 部署中...';
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
       btn.disabled = true;
+      Swal.fire({
+        title: '正在同步保存',
+        html: '正在写入频道数据并触发 Vercel 部署，请稍候...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      });
+
       try {
         const response = await fetch('/api/manage?token=' + encodeURIComponent(currentToken), {
           method: 'POST',
@@ -789,12 +819,17 @@ export default async function handler(req, res) {
           body: JSON.stringify({ newData: normalizeAll(raw) })
         });
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload.error || '保存失败');
-        Swal.fire({ icon: 'success', title: '部署已触发' });
+        if (!response.ok || !payload.success) throw new Error(payload.error || '保存失败');
+        Swal.fire({
+          icon: 'success',
+          title: '保存已同步',
+          html: '频道数据已保存，并已触发 Vercel 部署。',
+          confirmButtonText: '完成'
+        });
       } catch (error) {
-        Swal.fire('错误', error.message, 'error');
+        Swal.fire('保存失败', error.message, 'error');
       } finally {
-        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> 保存并部署';
+        btn.innerHTML = originalHtml || '<i class="fas fa-cloud-upload-alt"></i> 保存并部署';
         btn.disabled = false;
       }
     }
