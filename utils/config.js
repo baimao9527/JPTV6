@@ -5,7 +5,7 @@ export default {
   adminToken: process.env.ADMIN_TOKEN || '9321',
 
   // TOKEN: M3U/TXT list access only.
-  listToken: process.env.TOKEN || '9527',
+  listToken: process.env.TOKEN || '',
 
   logoBaseUrl: 'https://gcore.jsdelivr.net/gh/fanmingming/live/tv/',
   projectUrl: 'https://github.com/JY4K/jptv_redirect',
