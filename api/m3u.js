@@ -1,6 +1,13 @@
 import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels } from '../utils/helpers.js';
+import config from '../utils/config.js';
 
 export default function handler(req, res) {
+  const token = req.query.token || '';
+  if (!config.listToken || token !== config.listToken) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(401).send('Unauthorized: Invalid List Token');
+  }
+
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
