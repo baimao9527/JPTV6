@@ -243,6 +243,12 @@ export default async function handler(req, res) {
     .theme-dark .icon-btn:hover { color: #bfdbfe; background: rgba(96, 165, 250, 0.16); }
     .icon-btn.danger { color: #ef4444; }
     .icon-btn.danger:hover { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
+    .source-card { display: grid; grid-template-columns: 34px 1fr 38px; gap: 0.65rem; align-items: center; padding: 0.75rem; border-radius: 0.9rem; background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); box-shadow: inset 0 1px 0 var(--glass-highlight); transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease; }
+    .source-card.dragging { opacity: 0.48; transform: scale(0.985); border-color: rgba(59, 130, 246, 0.55); }
+    .source-card.drag-over { border-color: rgba(59, 130, 246, 0.65); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14), inset 0 1px 0 var(--glass-highlight); }
+    .source-drag-handle { width: 34px; height: 64px; border-radius: 0.7rem; display: inline-flex; align-items: center; justify-content: center; cursor: grab; color: var(--source-muted); background: rgba(148, 163, 184, 0.12); border: 1px solid var(--glass-border); touch-action: none; }
+    .source-drag-handle:active { cursor: grabbing; }
+    .source-card-fields { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 0.55rem; }
     .channel-logo-preview { width: 58px; height: 58px; min-width: 58px; border-radius: 0.95rem; object-fit: contain; padding: 0.45rem; background: linear-gradient(145deg, rgba(255,255,255,0.42), rgba(148,163,184,0.12)); border: 1px solid var(--glass-border); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255,255,255,0.26); }
     .theme-dark .channel-logo-preview { background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(15,23,42,0.28)); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255,255,255,0.12); }
     .format-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
@@ -272,8 +278,10 @@ export default async function handler(req, res) {
       .source-titlebar > .flex.items-center.gap-2 { width: 100%; justify-content: flex-end; padding: 0 0.5rem 0.55rem; }
       .source-gutter { width: 38px; min-width: 38px; padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
       .source-textarea { width: calc(100% - 38px); font-size: 0.78rem; }
-      .source-row { grid-template-columns: 1fr 42px !important; gap: 0.45rem; }
-      .source-row .source-url { grid-column: 1 / -1; min-height: 42px; }
+      .source-card { grid-template-columns: 34px 1fr 42px; gap: 0.5rem; padding: 0.6rem; }
+      .source-drag-handle { height: 88px; }
+      .source-card-fields { grid-template-columns: 1fr; gap: 0.45rem; }
+      .source-row .source-url,
       .source-row .source-note { min-height: 42px; }
       .source-row button { height: 42px; }
       .channel-logo-preview { width: 52px; height: 52px; min-width: 52px; }
@@ -419,13 +427,19 @@ export default async function handler(req, res) {
 
     function renderChannelGrid(group, gi) {
       return \`<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-        \${group.channels.map((channel, ci) => \`
-          <div class="card rounded-xl"
-            \${isAuth ? \`draggable="true" ondragstart="dragStart(event,\${gi},\${ci})" ondragover="event.preventDefault()" ondrop="dragDrop(event,\${gi},\${ci})"\` : ''}
-            onclick="\${isAuth ? \`editChannel(\${gi},\${ci})\` : \`openLogo('\${js(getLogoUrl(channel.logo))}')\`}">
+        \${group.channels.map((channel, ci) => {
+          const logoUrl = getLogoUrl(channel.logo);
+          const tag = isAuth ? 'div' : 'a';
+          const attrs = isAuth
+            ? \`draggable="true" ondragstart="dragStart(event,\${gi},\${ci})" ondragover="event.preventDefault()" ondrop="dragDrop(event,\${gi},\${ci})" onclick="editChannel(\${gi},\${ci})"\`
+            : \`href="\${html(logoUrl)}" target="_blank" rel="noopener noreferrer"\`;
+          return \`
+          <\${tag} class="card rounded-xl no-underline text-inherit"
+            \${attrs}>
             <img src="\${html(getLogoUrl(channel.logo))}" class="channel-logo" onerror="this.src='/jptv.png'" alt="\${html(channel.name)}">
             <div class="text-center w-full px-2"><h3 class="font-bold text-sm truncate">\${html(channel.name)}</h3></div>
-          </div>\`).join('')}
+          </\${tag}>\`;
+        }).join('')}
         \${isAuth ? \`<div onclick="addChannel(\${gi})" class="card rounded-xl border-dashed border-2 opacity-50 hover:opacity-100 text-blue-500"><i class="fas fa-plus text-3xl mb-2"></i><span class="font-bold text-sm">添加频道</span></div>\` : ''}
       </div>\`;
     }
@@ -456,10 +470,6 @@ export default async function handler(req, res) {
             <textarea id="source-editor-\${gi}" rows="\${rows}" oninput="updateLineNumbers(\${gi})" onscroll="syncSourceScroll(\${gi})" class="source-textarea flex-1 p-3" spellcheck="false">\${html(content)}</textarea>
           </div>
         </div>\`;
-    }
-
-    function openLogo(url) {
-      window.open(url || '/jptv.png', '_blank', 'noopener,noreferrer');
     }
 
     function formatTitle(name, note) {
@@ -550,6 +560,10 @@ export default async function handler(req, res) {
         didOpen: () => {
           window.addSourceRow = addSourceRow;
           window.removeSourceRow = removeSourceRow;
+          window.sourceDragStart = sourceDragStart;
+          window.sourceDragOver = sourceDragOver;
+          window.sourceDrop = sourceDrop;
+          window.sourceDragEnd = sourceDragEnd;
           window.updateChannelLogoPreview = updateChannelLogoPreview;
           updateChannelLogoPreview();
         },
@@ -574,10 +588,13 @@ export default async function handler(req, res) {
     }
 
     function sourceRow(source = {}, index = 0) {
-      return \`<div class="source-row grid grid-cols-[1fr_180px_36px] gap-2 items-center">
-        <input class="source-url p-2 border rounded bg-transparent font-mono text-xs" placeholder="URL" value="\${html(source.url || '')}">
-        <input class="source-note p-2 border rounded bg-transparent text-sm" placeholder="备注，可留空" value="\${html(source.note || '')}">
-        <button type="button" onclick="removeSourceRow(this)" class="h-9 rounded bg-red-500/10 text-red-500"><i class="fas fa-trash"></i></button>
+      return \`<div class="source-row source-card" ondragover="sourceDragOver(event)" ondrop="sourceDrop(event)" ondragend="sourceDragEnd(event)">
+        <div class="source-drag-handle" draggable="true" ondragstart="sourceDragStart(event)" title="拖动排序"><i class="fas fa-grip-vertical"></i></div>
+        <div class="source-card-fields">
+          <input class="source-url p-2 border rounded bg-transparent font-mono text-xs" placeholder="URL" value="\${html(source.url || '')}">
+          <input class="source-note p-2 border rounded bg-transparent text-sm" placeholder="备注，可留空" value="\${html(source.note || '')}">
+        </div>
+        <button type="button" onclick="removeSourceRow(this)" class="h-10 rounded bg-red-500/10 text-red-500"><i class="fas fa-trash"></i></button>
       </div>\`;
     }
 
@@ -590,6 +607,36 @@ export default async function handler(req, res) {
 
     function addSourceRow() {
       document.getElementById('sourceRows').insertAdjacentHTML('beforeend', sourceRow());
+    }
+
+    function sourceDragStart(event) {
+      const row = event.currentTarget.closest('.source-row');
+      if (!row) return;
+      row.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', '');
+    }
+
+    function sourceDragOver(event) {
+      event.preventDefault();
+      const target = event.currentTarget;
+      const dragging = document.querySelector('.source-row.dragging');
+      if (!dragging || dragging === target) return;
+      target.classList.add('drag-over');
+      const rect = target.getBoundingClientRect();
+      const placeAfter = event.clientY > rect.top + rect.height / 2;
+      target.parentNode.insertBefore(dragging, placeAfter ? target.nextSibling : target);
+    }
+
+    function sourceDrop(event) {
+      event.preventDefault();
+      sourceDragEnd(event);
+    }
+
+    function sourceDragEnd() {
+      document.querySelectorAll('.source-row').forEach((row) => {
+        row.classList.remove('dragging', 'drag-over');
+      });
     }
 
     function removeSourceRow(button) {
