@@ -1,20 +1,16 @@
 export default {
-  // 当前版本号
   currentVersion: '1.2.0',
 
-  // 管理员 Token (Vercel 环境变量优先)
-  adminToken: process.env.ADMIN_TOKEN || '123456',
+  // ADMIN_TOKEN: admin page, save, and deploy.
+  adminToken: process.env.ADMIN_TOKEN || '9321',
 
-  // 频道 Logo 基础路径
+  // TOKEN: M3U/TXT list access only.
+  listToken: process.env.TOKEN || '9527',
+
   logoBaseUrl: 'https://gcore.jsdelivr.net/gh/fanmingming/live/tv/',
-
-  // 项目开源地址
   projectUrl: 'https://github.com/JY4K/jptv_redirect',
-
-  // 版本检测地址
   repoApiUrl: 'https://api.github.com/repos/imput/iptv-pro/releases/latest',
 
-  // Vercel 部署配置
   platform: {
     projectId: process.env.DEPLOY_PLATFROM_PROJECT || '',
     token: process.env.DEPLOY_PLATFROM_TOKEN || ''
