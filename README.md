@@ -37,6 +37,13 @@ https://你的域名/data/logo/凤凰卫视中文台.png
 data/channels.json
 ```
 
+运行时数据优先级：
+
+1. `CHANNELS_DATA`
+2. `data/channels.json`
+
+只读首页、管理后台、JSON 输出、M3U 输出和 TXT 输出都使用同一个数据入口。只要 Vercel 环境变量 `CHANNELS_DATA` 存在且格式正确，所有展示界面都会优先使用环境变量里的频道名称、分组、Logo 和播放源。
+
 默认 Logo 目录位于：
 
 ```text

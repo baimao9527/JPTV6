@@ -8,6 +8,20 @@ const ABSOLUTE_URL_PATTERN = /^(https?:)?\/\//i;
 
 const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
 
+const parseChannelsData = (value) => {
+  const data = typeof value === 'string' ? JSON.parse(value) : value;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.channels)) return data.channels;
+  if (data && Array.isArray(data.groups)) return data.groups;
+  return null;
+};
+
+const readLocalChannels = () => {
+  const localPath = path.join(process.cwd(), 'data', 'channels.json');
+  if (!fs.existsSync(localPath)) return [];
+  return parseChannelsData(fs.readFileSync(localPath, 'utf8')) || [];
+};
+
 export const getLogoFileName = (logoId = '') => {
   const value = String(logoId || '').trim();
   if (!value) return '';
@@ -38,38 +52,31 @@ export const getRequestOrigin = (req = {}) => {
 };
 
 export const getChannels = () => {
-  if (process.env.CHANNELS_DATA) {
+  const envValue = String(process.env.CHANNELS_DATA || '').trim();
+
+  if (envValue) {
     try {
-      const envData = JSON.parse(process.env.CHANNELS_DATA);
-      if (Array.isArray(envData)) return normalizeChannels(envData);
+      const envData = parseChannelsData(envValue);
+      if (envData) return normalizeChannels(envData);
+      console.warn('CHANNELS_DATA 格式无效，回退到 data/channels.json');
     } catch (error) {
-      console.warn('CHANNELS_DATA 解析失败，回退到本地 channels.json:', error.message);
+      console.warn('CHANNELS_DATA 解析失败，回退到 data/channels.json:', error.message);
     }
   }
 
   try {
-    const localPaths = [
-      path.join(process.cwd(), 'data', 'channels.json'),
-      path.join(process.cwd(), 'public', 'channels.json')
-    ];
-
-    for (const localPath of localPaths) {
-      if (fs.existsSync(localPath)) {
-        return normalizeChannels(JSON.parse(fs.readFileSync(localPath, 'utf8')));
-      }
-    }
+    return normalizeChannels(readLocalChannels());
   } catch (error) {
-    console.error('本地 channels.json 读取失败:', error.message);
+    console.error('data/channels.json 读取失败:', error.message);
+    return [];
   }
-
-  return [];
 };
 
 export const buildLogoUrl = (logoId, baseUrl = '') => {
   const value = String(logoId || '').trim();
   if (ABSOLUTE_URL_PATTERN.test(value) || value.startsWith('data:')) return value;
 
-  const fileName = getLogoFileName(logoId);
+  const fileName = getLogoFileName(value);
   if (!fileName) return getDefaultLogoUrl(baseUrl);
 
   const origin = trimTrailingSlash(baseUrl);
@@ -81,7 +88,7 @@ export const normalizeLogoId = (logoId = '') => {
   const value = String(logoId || '').trim();
   if (ABSOLUTE_URL_PATTERN.test(value) || value.startsWith('data:')) return value;
 
-  const fileName = getLogoFileName(logoId);
+  const fileName = getLogoFileName(value);
   if (!fileName || fileName === DEFAULT_LOGO_FILE) return '';
   return fileName;
 };
@@ -118,13 +125,12 @@ export const normalizeSources = (value) => {
   return items
     .map((item) => {
       if (typeof item === 'string') return { url: item.trim(), note: '' };
-      if (item && typeof item === 'object') {
-        return {
-          url: String(item.url || item.href || '').trim(),
-          note: String(item.note || item.remark || item.name || '').trim()
-        };
-      }
-      return null;
+      if (!item || typeof item !== 'object') return null;
+
+      return {
+        url: String(item.url || item.href || '').trim(),
+        note: String(item.note || item.remark || item.name || '').trim()
+      };
     })
     .filter((item) => item && item.url);
 };
