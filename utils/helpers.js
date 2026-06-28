@@ -88,9 +88,14 @@ export const normalizeLogoId = (logoId = '') => {
   const value = String(logoId || '').trim();
   if (ABSOLUTE_URL_PATTERN.test(value) || value.startsWith('data:')) return value;
 
-  const fileName = getLogoFileName(value);
-  if (!fileName || fileName === DEFAULT_LOGO_FILE) return '';
-  return fileName;
+  const clean = value
+    .replace(/^\/+/, '')
+    .replace(/\\/g, '/')
+    .split(/[?#]/)[0]
+    .trim();
+  const logoIdOnly = clean.includes('/') ? clean.split('/').pop().trim() : clean;
+  if (!logoIdOnly || logoIdOnly === DEFAULT_LOGO_FILE) return '';
+  return logoIdOnly;
 };
 
 export const normalizeChannels = (groups = []) => {
