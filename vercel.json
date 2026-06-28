@@ -32,6 +32,10 @@
       "destination": "/api/txt"
     },
     {
+      "source": "/data/logo/:path*",
+      "destination": "/api/logo?file=:path*"
+    },
+    {
       "source": "/",
       "destination": "/api/manage"
     },
