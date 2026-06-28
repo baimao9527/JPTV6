@@ -8,6 +8,8 @@ const ABSOLUTE_URL_PATTERN = /^(https?:)?\/\//i;
 
 const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
 
+const stripLogoExtension = (value = '') => String(value).replace(/\.(png|jpe?g|webp|gif|svg|avif)$/i, '');
+
 const parseChannelsData = (value) => {
   const data = typeof value === 'string' ? JSON.parse(value) : value;
   if (Array.isArray(data)) return data;
@@ -95,7 +97,7 @@ export const normalizeLogoId = (logoId = '') => {
     .trim();
   const logoIdOnly = clean.includes('/') ? clean.split('/').pop().trim() : clean;
   if (!logoIdOnly || logoIdOnly === DEFAULT_LOGO_FILE) return '';
-  return logoIdOnly;
+  return stripLogoExtension(logoIdOnly);
 };
 
 export const normalizeChannels = (groups = []) => {
@@ -119,8 +121,7 @@ export const normalizeChannel = (channel = {}) => {
     name,
     id: String(channel.id || name).trim(),
     logo: normalizeLogoId(channel.logo),
-    sources,
-    url: sources.map((source) => source.url)
+    sources
   };
 };
 
