@@ -11,9 +11,18 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+function safeDecode(value = '') {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function sanitizeLogoPath(value = '') {
   const input = Array.isArray(value) ? value.join('/') : value;
-  const raw = String(input).replace(/^\/+/, '').replace(/\\/g, '/');
+  const decoded = safeDecode(String(input));
+  const raw = decoded.replace(/^\/+/, '').replace(/\\/g, '/');
   const normalized = path.posix.normalize(raw);
   if (!normalized || normalized === '.' || normalized.startsWith('..') || normalized.includes('/..')) return '';
   return normalized;
