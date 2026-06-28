@@ -377,7 +377,11 @@ export default async function handler(req, res) {
 
     function normalizeChannel(ch) {
       const sources = normalizeSources(ch.sources || ch.urls || ch.url);
-      return { name: String(ch.name || '').trim(), id: String(ch.id || ch.name || '').trim(), logo: normalizeLogoInput(ch.logo), sources, url: sources.map((source) => source.url) };
+      return { name: String(ch.name || '').trim(), id: String(ch.id || ch.name || '').trim(), logo: normalizeLogoInput(ch.logo), sources };
+    }
+
+    function stripLogoExtension(value) {
+      return String(value || '').replace(/\\.(png|jpe?g|webp|gif|svg|avif)$/i, '');
     }
 
     function normalizeLogoInput(logo) {
@@ -385,7 +389,41 @@ export default async function handler(req, res) {
       if (!value || value === 'jptv.png') return '';
       if (value.startsWith('http') || value.startsWith('//') || value.startsWith('data:')) return value;
       const clean = value.replace(/^\\/+/, '').replace(/\\\\/g, '/').split(/[?#]/)[0];
-      return clean.includes('/') ? clean.split('/').pop() : clean;
+      return stripLogoExtension(clean.includes('/') ? clean.split('/').pop() : clean);
+    }
+
+    function getLogoNameForFields(logo) {
+      const value = String(logo || '').trim();
+      if (!value) return '';
+      if (value.startsWith('data:')) return '';
+      if (value.startsWith('http') || value.startsWith('//')) {
+        const cleanUrl = value.split(/[?#]/)[0].replace(/\\/+$/, '');
+        const fileName = cleanUrl.split('/').pop() || '';
+        return stripLogoExtension(fileName);
+      }
+      return normalizeLogoInput(value);
+    }
+
+    const pinyinInitialBoundaries = [
+      ['a', '阿'], ['b', '芭'], ['c', '嚓'], ['d', '咑'], ['e', '妸'], ['f', '发'],
+      ['g', '旮'], ['h', '铪'], ['j', '讥'], ['k', '咔'], ['l', '垃'], ['m', '妈'],
+      ['n', '拿'], ['o', '噢'], ['p', '啪'], ['q', '期'], ['r', '然'], ['s', '撒'],
+      ['t', '塌'], ['w', '挖'], ['x', '昔'], ['y', '压'], ['z', '匝']
+    ];
+
+    function getCharInitial(char) {
+      if (/[a-z0-9]/i.test(char)) return char;
+      if (!/[\\u4e00-\\u9fff]/.test(char)) return '';
+      for (let index = pinyinInitialBoundaries.length - 1; index >= 0; index -= 1) {
+        if (char.localeCompare(pinyinInitialBoundaries[index][1], 'zh-Hans-CN-u-co-pinyin') >= 0) {
+          return pinyinInitialBoundaries[index][0];
+        }
+      }
+      return '';
+    }
+
+    function logoNameToId(logoName) {
+      return Array.from(String(logoName || '').trim()).map(getCharInitial).join('');
     }
 
     function normalizeAll(groups) {
@@ -578,7 +616,7 @@ export default async function handler(req, res) {
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <input id="s-id" placeholder="ID" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.id)}">
-            <input id="s-logo" placeholder="Logo" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="updateChannelLogoPreview()">
+            <input id="s-logo" placeholder="Logo" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="handleChannelLogoInput()">
           </div>
           <div id="sourceRows" class="space-y-2">\${sourceRows}</div>
           <button type="button" onclick="addSourceRow()" class="w-full sm:w-auto min-h-[42px] px-3 py-2 rounded bg-blue-600 text-white text-sm"><i class="fas fa-plus"></i> 添加链接</button>
@@ -595,6 +633,7 @@ export default async function handler(req, res) {
           window.sourceDrop = sourceDrop;
           window.sourceDragEnd = sourceDragEnd;
           window.updateChannelLogoPreview = updateChannelLogoPreview;
+          window.handleChannelLogoInput = handleChannelLogoInput;
           updateChannelLogoPreview();
         },
         preConfirm: () => {
@@ -604,7 +643,7 @@ export default async function handler(req, res) {
             note: row.querySelector('.source-note').value.trim()
           })).filter((source) => source.url);
           if (!name || !rows.length) return Swal.showValidationMessage('名称和链接不能为空');
-          return { name, id: document.getElementById('s-id').value.trim() || name, logo: document.getElementById('s-logo').value.trim(), sources: rows, url: rows.map((source) => source.url) };
+          return { name, id: document.getElementById('s-id').value.trim() || name, logo: normalizeLogoInput(document.getElementById('s-logo').value), sources: rows };
         }
       });
 
@@ -633,6 +672,17 @@ export default async function handler(req, res) {
       const preview = document.getElementById('s-logo-preview');
       if (!preview) return;
       preview.src = getLogoUrl(input?.value || '');
+    }
+
+    function handleChannelLogoInput() {
+      const logoInput = document.getElementById('s-logo');
+      const nameInput = document.getElementById('s-name');
+      const idInput = document.getElementById('s-id');
+      const logoName = getLogoNameForFields(logoInput?.value || '');
+      updateChannelLogoPreview();
+      if (!logoName) return;
+      nameInput.value = logoName;
+      idInput.value = logoNameToId(logoName) || logoName;
     }
 
     function addSourceRow() {
@@ -893,11 +943,10 @@ export default async function handler(req, res) {
       const group = groups.get(groupName);
       let channel = group.channels.find((ch) => ch.name === item.name && ch.logo === item.logo);
       if (!channel) {
-        channel = { name: item.name, id: item.id || item.name, logo: item.logo || '', sources: [], url: [] };
+        channel = { name: item.name, id: item.id || item.name, logo: item.logo || '', sources: [] };
         group.channels.push(channel);
       }
       channel.sources.push(item.source);
-      channel.url.push(item.source.url);
     }
 
     async function saveData() {
