@@ -26,10 +26,6 @@
   ],
   "rewrites": [
     {
-      "source": "/ipv6.json",
-      "destination": "/api/manage?format=json"
-    },
-    {
       "source": "/ipv6.m3u",
       "destination": "/api/m3u"
     },
@@ -48,6 +44,10 @@
     {
       "source": "/:token/ipv6.m3u",
       "destination": "/api/m3u?token=:token"
+    },
+    {
+      "source": "/:token/ipv6.json",
+      "destination": "/api/manage?token=:token&format=json"
     },
     {
       "source": "/:token/ipv6.txt",
