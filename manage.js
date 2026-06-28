@@ -99,6 +99,8 @@ async function saveToVercel(newData) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
   const token = req.query.token || '';
   const isAuth = token === config.adminToken;
   const isListAuth = Boolean(config.listToken) && token === config.listToken;
@@ -339,6 +341,21 @@ export default async function handler(req, res) {
   </div>
 
   <script>
+    if (!window.Swal) {
+      window.Swal = {
+        __fallback: true,
+        fire: (title, message) => {
+          window.alert([title, message].filter(Boolean).join('\\n'));
+          return Promise.resolve({});
+        },
+        showValidationMessage: (message) => {
+          window.alert(message);
+          return false;
+        },
+        showLoading: () => {}
+      };
+    }
+
     let raw = ${JSON.stringify(channels)};
     const isAuth = ${isAuth};
     const currentToken = ${JSON.stringify(token)};
@@ -691,6 +708,12 @@ export default async function handler(req, res) {
     }
 
     async function openExportDialog() {
+      if (Swal.__fallback) {
+        const format = (window.prompt('请输入导出格式：json / m3u / txt', 'json') || '').trim().toLowerCase();
+        if (['json', 'm3u', 'txt'].includes(format)) downloadExport(format);
+        return;
+      }
+
       const { value: format } = await Swal.fire({
         title: '导出频道',
         width: 560,
@@ -740,6 +763,24 @@ export default async function handler(req, res) {
     }
 
     async function globalImport() {
+      if (Swal.__fallback) {
+        const selectedFormat = (window.prompt('请输入导入格式：auto / json / m3u / txt', 'auto') || 'auto').trim().toLowerCase();
+        const text = window.prompt('请粘贴 JSON / M3U / TXT 代码', '');
+        if (!text) return;
+
+        try {
+          const format = selectedFormat === 'auto' ? detectFormat(text, '') : selectedFormat;
+          const groups = parseImport(text, format);
+          raw = normalizeAll(groups);
+          sourceState.open = null;
+          render();
+          window.alert('导入成功');
+        } catch (error) {
+          window.alert('导入失败：' + error.message);
+        }
+        return;
+      }
+
       const { value } = await Swal.fire({
         title: '导入频道',
         width: 760,
@@ -884,6 +925,24 @@ export default async function handler(req, res) {
         btn.disabled = false;
       }
     }
+
+    Object.assign(window, {
+      addChannel,
+      addGroup,
+      applyGroupSource,
+      deleteGroup,
+      dragDrop,
+      dragStart,
+      globalImport,
+      moveGroup,
+      openExportDialog,
+      saveData,
+      switchSourceFormat,
+      syncSourceScroll,
+      toggleSource,
+      toggleTheme,
+      updateLineNumbers
+    });
 
     applyTheme();
     render();
