@@ -115,6 +115,7 @@ export default async function handler(req, res) {
   const isTXTReq = req.url.includes('ipv6.txt') || req.query.format === 'txt';
 
   if (isJSONReq) {
+    if (!isListAuth) return res.status(401).send('Unauthorized: Invalid List Token');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(channels, null, 2));
   }
@@ -376,7 +377,15 @@ export default async function handler(req, res) {
 
     function normalizeChannel(ch) {
       const sources = normalizeSources(ch.sources || ch.urls || ch.url);
-      return { name: String(ch.name || '').trim(), id: String(ch.id || ch.name || '').trim(), logo: String(ch.logo || '').trim(), sources, url: sources.map((source) => source.url) };
+      return { name: String(ch.name || '').trim(), id: String(ch.id || ch.name || '').trim(), logo: normalizeLogoInput(ch.logo), sources, url: sources.map((source) => source.url) };
+    }
+
+    function normalizeLogoInput(logo) {
+      const value = String(logo || '').trim();
+      if (!value || value === 'jptv.png') return '';
+      if (value.startsWith('http') || value.startsWith('//') || value.startsWith('data:')) return value;
+      const clean = value.replace(/^\\/+/, '').replace(/\\\\/g, '/').split(/[?#]/)[0];
+      return clean.includes('/') ? clean.split('/').pop() : clean;
     }
 
     function normalizeAll(groups) {
