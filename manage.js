@@ -394,9 +394,9 @@ export default async function handler(req, res) {
     function getLogoUrl(logo) {
       if (!logo) return fallbackLogo;
       if (String(logo).startsWith('http') || String(logo).startsWith('//')) return logo;
-      const fileName = String(logo).trim().replace(/\\/g, '/').split('/').pop();
+      const fileName = String(logo).trim().replace(/\\\\/g, '/').split('/').pop();
       if (!fileName) return fallbackLogo;
-      return logoBaseUrl + '/' + encodeURIComponent(fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
+      return logoBaseUrl + '/' + (fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
     }
 
     function render() {
