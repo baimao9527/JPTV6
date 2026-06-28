@@ -1,4 +1,4 @@
-import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels, getDefaultLogoUrl, getRequestOrigin, normalizeChannels } from '../utils/helpers.js';
+import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels, getRequestOrigin, normalizeChannels } from '../utils/helpers.js';
 import config from '../utils/config.js';
 
 function escapeText(value = '') {
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JPTV 管理系统</title>
-  <link rel="icon" href="/jptv.png" type="image/png">
+  <link rel="icon" href="${escapeText(fallbackLogo)}" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -303,7 +303,7 @@ export default async function handler(req, res) {
     <header class="flex flex-col lg:flex-row justify-between items-center mb-8 glass-panel p-6 rounded-2xl gap-4">
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-gray-100">
-          <img src="/jptv.png" class="w-10 h-10 object-contain" alt="JPTV">
+          <img src="${escapeText(fallbackLogo)}" class="w-10 h-10 object-contain" alt="JPTV">
         </div>
         <div>
           <h1 class="text-2xl font-bold">JPTV 控制台</h1>

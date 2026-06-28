@@ -12,7 +12,8 @@ const MIME_TYPES = {
 };
 
 function sanitizeLogoPath(value = '') {
-  const raw = String(value).replace(/^\/+/, '').replace(/\\/g, '/');
+  const input = Array.isArray(value) ? value.join('/') : value;
+  const raw = String(input).replace(/^\/+/, '').replace(/\\/g, '/');
   const normalized = path.posix.normalize(raw);
   if (!normalized || normalized === '.' || normalized.startsWith('..') || normalized.includes('/..')) return '';
   return normalized;
@@ -38,5 +39,5 @@ export default function handler(req, res) {
   const ext = path.extname(resolvedPath).toLowerCase();
   res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
   res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
-  fs.createReadStream(resolvedPath).pipe(res);
+  return res.status(200).send(fs.readFileSync(resolvedPath));
 }
