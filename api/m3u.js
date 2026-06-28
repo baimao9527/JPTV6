@@ -1,4 +1,4 @@
-import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels } from '../utils/helpers.js';
+import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels, getRequestOrigin } from '../utils/helpers.js';
 import config from '../utils/config.js';
 
 export default function handler(req, res) {
@@ -12,11 +12,12 @@ export default function handler(req, res) {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
   const groups = getChannels();
+  const requestOrigin = getRequestOrigin(req);
   let m3u = '#EXTM3U\n';
 
   groups.forEach((group) => {
     group.channels.forEach((channel) => {
-      const logo = buildLogoUrl(channel.logo);
+      const logo = buildLogoUrl(channel.logo, requestOrigin);
       const tvgId = channel.id || channel.name;
 
       getChannelSources(channel).forEach((source) => {

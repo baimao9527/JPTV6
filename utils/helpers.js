@@ -2,6 +2,32 @@ import config from './config.js';
 import fs from 'fs';
 import path from 'path';
 
+const LOCAL_LOGO_DIR = '/data/logo';
+
+const isAbsoluteUrl = (value = '') => /^https?:\/\//i.test(value) || /^\/\//.test(value);
+
+const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
+
+const getLogoFileName = (logoId = '') => {
+  const clean = String(logoId).trim().replace(/^\/+/, '');
+  const fileName = clean.includes('/') ? clean.split('/').pop() : clean;
+  if (!fileName) return '';
+  return /\.[a-z0-9]+$/i.test(fileName) ? fileName : `${fileName}.png`;
+};
+
+export const getDefaultLogoUrl = (baseUrl = '') => {
+  const origin = trimTrailingSlash(baseUrl);
+  const logoPath = `${LOCAL_LOGO_DIR}/jptv.png`;
+  return origin ? `${origin}${logoPath}` : logoPath;
+};
+
+export const getRequestOrigin = (req = {}) => {
+  const headers = req.headers || {};
+  const proto = String(headers['x-forwarded-proto'] || headers['x-forwarded-scheme'] || 'https').split(',')[0].trim() || 'https';
+  const host = String(headers['x-forwarded-host'] || headers.host || '').split(',')[0].trim();
+  return host ? `${proto}://${host}` : '';
+};
+
 export const getChannels = () => {
   if (process.env.CHANNELS_DATA) {
     try {
@@ -13,9 +39,15 @@ export const getChannels = () => {
   }
 
   try {
-    const localPath = path.join(process.cwd(), 'public', 'channels.json');
-    if (fs.existsSync(localPath)) {
-      return normalizeChannels(JSON.parse(fs.readFileSync(localPath, 'utf8')));
+    const localPaths = [
+      path.join(process.cwd(), 'data', 'channels.json'),
+      path.join(process.cwd(), 'public', 'channels.json')
+    ];
+
+    for (const localPath of localPaths) {
+      if (fs.existsSync(localPath)) {
+        return normalizeChannels(JSON.parse(fs.readFileSync(localPath, 'utf8')));
+      }
     }
   } catch (error) {
     console.error('本地 channels.json 读取失败:', error.message);
@@ -24,9 +56,15 @@ export const getChannels = () => {
   return [];
 };
 
-export const buildLogoUrl = (logoId) => {
+export const buildLogoUrl = (logoId, baseUrl = '') => {
   if (!logoId) return '';
-  return String(logoId).startsWith('http') ? logoId : `${config.logoBaseUrl}${logoId}.png`;
+  const value = String(logoId).trim();
+  if (isAbsoluteUrl(value) || value.startsWith('data:')) return value;
+
+  const origin = trimTrailingSlash(baseUrl);
+  const fileName = getLogoFileName(value);
+  const logoPath = `${LOCAL_LOGO_DIR}/${encodeURIComponent(fileName)}`;
+  return origin ? `${origin}${logoPath}` : logoPath;
 };
 
 export const normalizeChannels = (groups = []) => {

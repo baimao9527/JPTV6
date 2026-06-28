@@ -1,4 +1,4 @@
-import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels, normalizeChannels } from '../utils/helpers.js';
+import { buildLogoUrl, formatChannelTitle, getChannelSources, getChannels, getDefaultLogoUrl, getRequestOrigin, normalizeChannels } from '../utils/helpers.js';
 import config from '../utils/config.js';
 
 function escapeText(value = '') {
@@ -11,11 +11,11 @@ function escapeText(value = '') {
   })[char]);
 }
 
-function generateM3U(channels) {
+function generateM3U(channels, baseUrl = '') {
   let m3u = '#EXTM3U\n';
   channels.forEach((group) => {
     group.channels.forEach((channel) => {
-      const logo = buildLogoUrl(channel.logo);
+      const logo = buildLogoUrl(channel.logo, baseUrl);
       getChannelSources(channel).forEach((source) => {
         m3u += `#EXTINF:-1 tvg-id="${channel.id || channel.name}" tvg-name="${channel.name}" tvg-logo="${logo}" group-title="${group.group}",${formatChannelTitle(channel.name, source.note)}\n${source.url}\n`;
       });
@@ -103,6 +103,9 @@ export default async function handler(req, res) {
   const isAuth = token === config.adminToken;
   const isListAuth = Boolean(config.listToken) && token === config.listToken;
   const currentVersion = config.currentVersion;
+  const requestOrigin = getRequestOrigin(req);
+  const logoBaseUrl = requestOrigin ? `${requestOrigin}/data/logo` : '/data/logo';
+  const fallbackLogo = `${logoBaseUrl}/jptv.png`;
   let channels = getChannels();
 
   const isJSONReq = req.url.includes('ipv6.json') || req.query.format === 'json';
@@ -117,7 +120,7 @@ export default async function handler(req, res) {
   if (isM3UReq || isTXTReq) {
     if (!isListAuth) return res.status(401).send('Unauthorized: Invalid List Token');
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.status(200).send(isM3UReq ? generateM3U(channels) : generateTXT(channels));
+    return res.status(200).send(isM3UReq ? generateM3U(channels, requestOrigin) : generateTXT(channels));
   }
 
   if (req.method === 'POST') {
@@ -391,8 +394,11 @@ export default async function handler(req, res) {
     }
 
     function getLogoUrl(logo) {
-      if (!logo) return '/jptv.png';
-      return String(logo).startsWith('http') ? logo : 'https://gcore.jsdelivr.net/gh/fanmingming/live/tv/' + encodeURIComponent(logo) + '.png';
+      if (!logo) return '${js(fallbackLogo)}';
+      if (String(logo).startsWith('http') || String(logo).startsWith('//')) return logo;
+      const fileName = String(logo).trim().replace(/\\/g, '/').split('/').pop();
+      if (!fileName) return '${js(fallbackLogo)}';
+      return '${js(logoBaseUrl)}/' + encodeURIComponent(fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
     }
 
     function render() {
@@ -436,7 +442,7 @@ export default async function handler(req, res) {
           return \`
           <\${tag} class="card rounded-xl no-underline text-inherit"
             \${attrs}>
-            <img src="\${html(getLogoUrl(channel.logo))}" class="channel-logo" onerror="this.src='/jptv.png'" alt="\${html(channel.name)}">
+            <img src="\${html(getLogoUrl(channel.logo))}" class="channel-logo" onerror="this.src='\${html(fallbackLogo)}'" alt="\${html(channel.name)}">
             <div class="text-center w-full px-2"><h3 class="font-bold text-sm truncate">\${html(channel.name)}</h3></div>
           </\${tag}>\`;
         }).join('')}
@@ -543,7 +549,7 @@ export default async function handler(req, res) {
         color: currentTheme === 'dark' ? '#fff' : '#333',
         html: \`<div class="space-y-4 text-left">
           <div class="flex gap-3 items-center">
-            <img id="s-logo-preview" src="\${html(getLogoUrl(channel.logo))}" onerror="this.src='/jptv.png'" class="channel-logo-preview" alt="Logo">
+            <img id="s-logo-preview" src="\${html(getLogoUrl(channel.logo))}" onerror="this.src='\${html(fallbackLogo)}'" class="channel-logo-preview" alt="Logo">
             <input id="s-name" placeholder="名称" class="w-full min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.name)}">
           </div>
           <div class="flex flex-col sm:flex-row gap-2">

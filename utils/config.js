@@ -5,9 +5,9 @@ export default {
   adminToken: process.env.ADMIN_TOKEN || '9321',
 
   // TOKEN: M3U/TXT list access only.
-  listToken: process.env.TOKEN || '',
+  listToken: process.env.TOKEN || '9527',
 
-  logoBaseUrl: 'https://gcore.jsdelivr.net/gh/fanmingming/live/tv/',
+  logoBaseUrl: '/data/logo',
   projectUrl: 'https://github.com/JY4K/jptv_redirect',
   repoApiUrl: 'https://api.github.com/repos/imput/iptv-pro/releases/latest',
 
