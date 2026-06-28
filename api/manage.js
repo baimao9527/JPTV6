@@ -342,6 +342,8 @@ export default async function handler(req, res) {
     let raw = ${JSON.stringify(channels)};
     const isAuth = ${isAuth};
     const currentToken = ${JSON.stringify(token)};
+    const logoBaseUrl = ${JSON.stringify(logoBaseUrl)};
+    const fallbackLogo = ${JSON.stringify(fallbackLogo)};
     let dragSrc = null;
     let sourceState = { open: null, format: 'json' };
     let currentTheme = localStorage.getItem('jptv_theme') || 'light';
@@ -372,10 +374,6 @@ export default async function handler(req, res) {
       return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
     }
 
-    function js(value) {
-      return String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, "\\\\'").replace(/\\n/g, '\\\\n').replace(/\\r/g, '');
-    }
-
     function applyTheme() {
       const isSwitching = document.body.classList.contains('theme-switching');
       document.body.className = 'theme-' + currentTheme + ' min-h-screen p-4 md:p-8' + (isSwitching ? ' theme-switching' : '');
@@ -394,11 +392,11 @@ export default async function handler(req, res) {
     }
 
     function getLogoUrl(logo) {
-      if (!logo) return '${js(fallbackLogo)}';
+      if (!logo) return fallbackLogo;
       if (String(logo).startsWith('http') || String(logo).startsWith('//')) return logo;
       const fileName = String(logo).trim().replace(/\\/g, '/').split('/').pop();
-      if (!fileName) return '${js(fallbackLogo)}';
-      return '${js(logoBaseUrl)}/' + encodeURIComponent(fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
+      if (!fileName) return fallbackLogo;
+      return logoBaseUrl + '/' + (fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
     }
 
     function render() {

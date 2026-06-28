@@ -1,5 +1,8 @@
 {
   "name": "jptv-logo-directory",
   "version": "4.2.0",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "check": "node --check api/manage.js && node --check api/m3u.js && node --check api/txt.js && node --check api/logo.js && node --check utils/config.js && node --check utils/helpers.js"
+  }
 }

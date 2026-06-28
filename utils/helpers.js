@@ -1,23 +1,32 @@
-import config from './config.js';
 import fs from 'fs';
 import path from 'path';
 
-const LOCAL_LOGO_DIR = '/data/logo';
+export const LOGO_BASE_PATH = '/data/logo';
+export const DEFAULT_LOGO_FILE = 'jptv.png';
 
-const isAbsoluteUrl = (value = '') => /^https?:\/\//i.test(value) || /^\/\//.test(value);
+const ABSOLUTE_URL_PATTERN = /^(https?:)?\/\//i;
 
 const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
 
-const getLogoFileName = (logoId = '') => {
-  const clean = String(logoId).trim().replace(/^\/+/, '');
-  const fileName = clean.includes('/') ? clean.split('/').pop() : clean;
+export const getLogoFileName = (logoId = '') => {
+  const value = String(logoId || '').trim();
+  if (!value) return '';
+
+  const clean = value
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    .replace(/^\/+/, '')
+    .replace(/\\/g, '/')
+    .split(/[?#]/)[0];
+
+  const fileName = (clean.includes('/') ? clean.split('/').pop() : clean).trim();
   if (!fileName) return '';
+
   return /\.[a-z0-9]+$/i.test(fileName) ? fileName : `${fileName}.png`;
 };
 
 export const getDefaultLogoUrl = (baseUrl = '') => {
   const origin = trimTrailingSlash(baseUrl);
-  const logoPath = `${LOCAL_LOGO_DIR}/jptv.png`;
+  const logoPath = `${LOGO_BASE_PATH}/${DEFAULT_LOGO_FILE}`;
   return origin ? `${origin}${logoPath}` : logoPath;
 };
 
@@ -57,14 +66,24 @@ export const getChannels = () => {
 };
 
 export const buildLogoUrl = (logoId, baseUrl = '') => {
-  if (!logoId) return '';
-  const value = String(logoId).trim();
-  if (isAbsoluteUrl(value) || value.startsWith('data:')) return value;
+  const value = String(logoId || '').trim();
+  if (ABSOLUTE_URL_PATTERN.test(value) || value.startsWith('data:')) return value;
+
+  const fileName = getLogoFileName(logoId);
+  if (!fileName) return getDefaultLogoUrl(baseUrl);
 
   const origin = trimTrailingSlash(baseUrl);
-  const fileName = getLogoFileName(value);
-  const logoPath = `${LOCAL_LOGO_DIR}/${encodeURIComponent(fileName)}`;
+  const logoPath = `${LOGO_BASE_PATH}/${fileName}`;
   return origin ? `${origin}${logoPath}` : logoPath;
+};
+
+export const normalizeLogoId = (logoId = '') => {
+  const value = String(logoId || '').trim();
+  if (ABSOLUTE_URL_PATTERN.test(value) || value.startsWith('data:')) return value;
+
+  const fileName = getLogoFileName(logoId);
+  if (!fileName || fileName === DEFAULT_LOGO_FILE) return '';
+  return fileName;
 };
 
 export const normalizeChannels = (groups = []) => {
@@ -87,7 +106,7 @@ export const normalizeChannel = (channel = {}) => {
   return {
     name,
     id: String(channel.id || name).trim(),
-    logo: String(channel.logo || '').trim(),
+    logo: normalizeLogoId(channel.logo),
     sources,
     url: sources.map((source) => source.url)
   };

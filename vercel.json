@@ -39,7 +39,7 @@
     },
     {
       "source": "/data/logo/:file*",
-      "destination": "/api/logo"
+      "destination": "/api/logo?file=:file*"
     },
     {
       "source": "/",
