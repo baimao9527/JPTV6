@@ -611,10 +611,10 @@ export default async function handler(req, res) {
         html: \`<div class="space-y-4 text-left">
           <div class="flex gap-3 items-center">
             <img id="s-logo-preview" src="\${html(getLogoUrl(channel.logo))}" onerror="this.src='\${html(fallbackLogo)}'" class="channel-logo-preview" alt="Logo">
-            <input id="s-name" placeholder="名称" class="w-full min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.name)}">
+            <input id="s-name" placeholder="名称" class="w-full min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.name)}" oninput="markChannelFieldsManual()">
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
-            <input id="s-id" placeholder="ID" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.id)}">
+            <input id="s-id" placeholder="ID" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.id)}" oninput="markChannelFieldsManual()">
             <input id="s-logo" placeholder="Logo" class="flex-1 min-h-[42px] p-2 border rounded bg-transparent" value="\${html(channel.logo)}" oninput="handleChannelLogoInput()">
           </div>
           <div id="sourceRows" class="space-y-2">\${sourceRows}</div>
@@ -633,6 +633,7 @@ export default async function handler(req, res) {
           window.sourceDragEnd = sourceDragEnd;
           window.updateChannelLogoPreview = updateChannelLogoPreview;
           window.handleChannelLogoInput = handleChannelLogoInput;
+          window.markChannelFieldsManual = markChannelFieldsManual;
           updateChannelLogoPreview();
         },
         preConfirm: () => {
@@ -679,11 +680,33 @@ export default async function handler(req, res) {
       const idInput = document.getElementById('s-id');
       const logoValue = logoInput?.value || '';
       const logoName = getLogoNameForFields(logoValue);
+      const shouldClearAutoFields = logoInput?.dataset.autoFilled === 'true';
       updateChannelLogoPreview();
-      if (isLogoUrl(logoValue)) return;
-      if (!logoName) return;
+      if (isLogoUrl(logoValue)) {
+        if (shouldClearAutoFields) clearChannelAutoFields();
+        if (logoInput) logoInput.dataset.autoFilled = 'false';
+        return;
+      }
+      if (!logoName) {
+        if (shouldClearAutoFields) clearChannelAutoFields();
+        if (logoInput) logoInput.dataset.autoFilled = 'false';
+        return;
+      }
       nameInput.value = logoName;
       idInput.value = logoNameToId(logoName) || logoName;
+      if (logoInput) logoInput.dataset.autoFilled = 'true';
+    }
+
+    function clearChannelAutoFields() {
+      const nameInput = document.getElementById('s-name');
+      const idInput = document.getElementById('s-id');
+      if (nameInput) nameInput.value = '';
+      if (idInput) idInput.value = '';
+    }
+
+    function markChannelFieldsManual() {
+      const logoInput = document.getElementById('s-logo');
+      if (logoInput) logoInput.dataset.autoFilled = 'false';
     }
 
     function addSourceRow() {
