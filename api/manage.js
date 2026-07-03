@@ -384,10 +384,14 @@ export default async function handler(req, res) {
       return String(value || '').replace(/\\.(png|jpe?g|webp|gif|svg|avif)$/i, '');
     }
 
+    function isLogoUrl(value) {
+      return /^(https?:)?\\/\\//i.test(String(value || '').trim()) || String(value || '').trim().startsWith('data:');
+    }
+
     function normalizeLogoInput(logo) {
       const value = String(logo || '').trim();
       if (!value || value === 'jptv.png') return '';
-      if (value.startsWith('http') || value.startsWith('//') || value.startsWith('data:')) return value;
+      if (isLogoUrl(value)) return value;
       const clean = value.replace(/^\\/+/, '').replace(/\\\\/g, '/').split(/[?#]/)[0];
       return stripLogoExtension(clean.includes('/') ? clean.split('/').pop() : clean);
     }
@@ -395,12 +399,7 @@ export default async function handler(req, res) {
     function getLogoNameForFields(logo) {
       const value = String(logo || '').trim();
       if (!value) return '';
-      if (value.startsWith('data:')) return '';
-      if (value.startsWith('http') || value.startsWith('//')) {
-        const cleanUrl = value.split(/[?#]/)[0].replace(/\\/+$/, '');
-        const fileName = cleanUrl.split('/').pop() || '';
-        return stripLogoExtension(fileName);
-      }
+      if (isLogoUrl(value)) return '';
       return normalizeLogoInput(value);
     }
 
@@ -457,7 +456,7 @@ export default async function handler(req, res) {
 
     function getLogoUrl(logo) {
       if (!logo) return fallbackLogo;
-      if (String(logo).startsWith('http') || String(logo).startsWith('//')) return logo;
+      if (isLogoUrl(logo)) return logo;
       const fileName = String(logo).trim().replace(/\\\\/g, '/').split('/').pop();
       if (!fileName) return fallbackLogo;
       return logoBaseUrl + '/' + (fileName.toLowerCase().endsWith('.png') ? fileName : fileName + '.png');
@@ -678,8 +677,10 @@ export default async function handler(req, res) {
       const logoInput = document.getElementById('s-logo');
       const nameInput = document.getElementById('s-name');
       const idInput = document.getElementById('s-id');
-      const logoName = getLogoNameForFields(logoInput?.value || '');
+      const logoValue = logoInput?.value || '';
+      const logoName = getLogoNameForFields(logoValue);
       updateChannelLogoPreview();
+      if (isLogoUrl(logoValue)) return;
       if (!logoName) return;
       nameInput.value = logoName;
       idInput.value = logoNameToId(logoName) || logoName;
