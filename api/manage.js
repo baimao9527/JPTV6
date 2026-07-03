@@ -261,6 +261,10 @@ export default async function handler(req, res) {
     .format-choice label { cursor: pointer; border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.5rem; background: var(--glass-bg); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); box-shadow: inset 0 1px 0 var(--glass-highlight); }
     .format-choice input { accent-color: #2563eb; }
     .swal2-popup { background: var(--glass-bg-strong) !important; color: inherit !important; border: 1px solid var(--glass-border) !important; backdrop-filter: blur(24px) saturate(150%) !important; -webkit-backdrop-filter: blur(24px) saturate(150%) !important; box-shadow: 0 24px 70px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight) !important; }
+    .swal2-close.channel-modal-close { width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important; top: 0.9rem !important; right: 0.9rem !important; border-radius: 0.65rem !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; background: rgba(148, 163, 184, 0.14) !important; border: 1px solid var(--glass-border) !important; color: #64748b !important; font-size: 1rem !important; line-height: 1 !important; transition: all 0.15s ease !important; }
+    .swal2-close.channel-modal-close:hover { background: rgba(239, 68, 68, 0.14) !important; color: #dc2626 !important; transform: translateY(-1px); }
+    .swal2-close.channel-modal-close:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important; }
+    .theme-dark .swal2-close.channel-modal-close { color: #cbd5e1 !important; background: rgba(255, 255, 255, 0.08) !important; }
     .swal2-html-container input, .swal2-html-container textarea { background: rgba(255,255,255,0.08) !important; border-color: var(--glass-border) !important; color: inherit !important; }
     .theme-light .swal2-html-container input, .theme-light .swal2-html-container textarea { background: rgba(255,255,255,0.54) !important; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -623,7 +627,12 @@ export default async function handler(req, res) {
         showDenyButton: !isNew,
         denyButtonText: '删除',
         confirmButtonText: '保存',
-        showCancelButton: true,
+        showCancelButton: false,
+        showCloseButton: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        closeButtonHtml: '<i class="fas fa-xmark"></i>',
+        customClass: { closeButton: 'channel-modal-close' },
         didOpen: () => {
           window.addSourceRow = addSourceRow;
           window.removeSourceRow = removeSourceRow;
