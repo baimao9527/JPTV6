@@ -1,164 +1,142 @@
-# JPTV Logo Directory
+<div align="center">
+  <img src="./logo/jptv.png" alt="Clash" width="128" style="border-radius: 16px;" />
+</div>
 
-基于 Vercel 的轻量频道 Logo 展示与频道源管理工具。
+<h2 align="center">
+    JPTV6 一个直播源 重定向 路由器
+</h2>
 
-## 功能
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Vercel-000000?logo=vercel&logoColor=white" alt="Vercel">
+  <img src="https://img.shields.io/badge/Runtime-Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
+</p>
 
-- 首页展示频道 Logo 网格。
-- 管理后台维护频道分组、频道 ID、Logo、播放源和备注。
-- 订阅输出支持 M3U 和 TXT。
-- 后台支持 JSON、M3U、TXT 导入导出。
-- 默认 Logo 从 `data/logo` 读取，不再使用外部 Logo CDN 自动拼接。
+> **JPTV6** 是一个基于 Vercel Serverless 构建的轻量级 JPTV 直播源管理与智能重定向系统。它不仅是订阅转换工具，更是您个人专属的“直播源路由器”。
 
-## Logo 规则
+### 项目初衷
+- 为了更好的可视化部署直播源，无需太复杂的配置，家里有老人的可以试试
 
-- 内置 Logo 文件统一放在 `data/logo`。
-- `channels.json` 中的 `logo` 可以填写文件名，例如 `CCTV1`、`CCTV1.png`、`凤凰卫视中文台.png`。
-- 非 URL 的 Logo 会自动拼接为：
+---
 
-```text
-https://你的域名/data/logo/频道Logo.png
-```
+## ✨ 核心特性 (Features)
 
-- 中文 Logo 文件名会原样保留，例如：
+- **🎨 可视化管理后台**: 
+  - 内置精美的 Web 管理界面（适配移动端/暗黑模式）。
+  - 支持**拖拽排序**、分组管理、频道增删改查。
+  - 实时预览 Logo 和频道信息。
+- **🔄 自动持续集成**: 在后台修改配置后，自动调用 Vercel API 触发项目重新构建，数据实时生效，无需手动操作 Git。
+- **📂 多格式订阅输出**: 自动生成适配各类播放器（UZ, OK, TVBox等）的 `.m3u` 和 `.txt` 格式文件。
+- **🛡️ 安全与隐私**: 
+  - 访客模式：仅可查看和下载订阅。
+  - 管理模式：通过 Token 验证，拥有完全控制权。
+- **☁️ Serverless 架构**: 完全基于 Vercel 免费版构建，无需购买服务器，零成本运维。
 
-```text
-https://你的域名/data/logo/凤凰卫视中文台.png
-```
+## 🚀 部署指南 (Deployment)
 
-- 如果 `logo` 填写完整 URL，例如 `https://example.com/logo.png`，系统会保留该 URL，不会改写。
-- 空 Logo 会使用 `data/logo/jptv.png`。
+您可以选择 **一键部署** 或 **手动部署**。
 
-## 数据文件
+### 方式一：一键部署 (推荐)
 
-默认频道数据位于：
+<p align="">
+  <a href="https://vercel.com/import/project?template=https://github.com/baimao9527/JPTV6">
+    <img src="https://vercel.com/button" alt="Deploy with Vercel"/>
+  </a>
+</p>
 
-```text
-data/channels.json
-```
 
-运行时数据优先级：
+1. 点击上方的 **Deploy** 按钮。
+2. 在 Vercel 页面中，创建一个 Git 仓库（Create Git Repository）。
+3. 在 **Configure Project** 步骤中，设置 `ADMIN_TOKEN` (后台管理密码)。
+4. 点击 **Deploy** 等待完成。
 
-1. `CHANNELS_DATA`
-2. `data/channels.json`
+### 方式二：手动部署
 
-只读首页、管理后台、JSON 输出、M3U 输出和 TXT 输出都使用同一个数据入口。只要 Vercel 环境变量 `CHANNELS_DATA` 存在且格式正确，所有展示界面都会优先使用环境变量里的频道名称、分组、Logo 和播放源。
+1. **Fork** 本仓库到您的 GitHub。
+2. 在 [Vercel Dashboard](https://vercel.com/) 点击 **Add New...** -> **Project**。
+3. 导入您刚才 Fork 的仓库。
+4. 在 Environment Variables 中添加 `ADMIN_TOKEN`。
+5. 点击 **Deploy**。
 
-默认 Logo 目录位于：
+---
 
-```text
-data/logo/
-```
+##  配置环境变量 (Environment Variables)
+在 Vercel 的部署配置页（或部署后的 Settings -> Environment Variables），添加以下变量：
 
-## 环境变量
+| 变量名 | 描述 | 必填 | 获取方式/示例                                    |
+| :--- | :--- | :--- |:-------------------------------------------|
+| `TOKEN` | 订阅链接密码 | ✅ | 默认：`123456`                                |
+| `ADMIN_TOKEN` | 管理后台的登录密码 | ✅ | 默认：`123456`                                |
+| `DEPLOY_PLATFROM_PROJECT` | Vercel 项目 ID | ✅ | Vercel项目 Settings -> General -> Project ID |
+| `DEPLOY_PLATFROM_TOKEN` | Vercel 访问令牌 | ✅ | Vercel账号 Settings -> Tokens -> Create      |
+| `CHANNELS_DATA` | 频道数据缓存 | ❌ | **无需手动配置**，系统会自动生成                         |
 
-请在 Vercel 项目的 `Settings -> Environment Variables` 中配置：
+#### 获取步骤
 
-| 变量名 | 必填 | 说明 |
-| :--- | :---: | :--- |
-| `ADMIN_TOKEN` | 是 | 管理后台访问 Token |
-| `TOKEN` | 是 | M3U/TXT 订阅访问 Token |
-| `DEPLOY_PLATFROM_PROJECT` | 是 | Vercel Project ID |
-| `DEPLOY_PLATFROM_TOKEN` | 是 | Vercel API Token |
-| `CHANNELS_DATA` | 否 | 后台保存时写入的频道数据缓存 |
+**获取 Project ID (`DEPLOY_PLATFROM_PROJECT`)**
 
-> `DEPLOY_PLATFROM_PROJECT` 和 `DEPLOY_PLATFROM_TOKEN` 沿用当前项目里的拼写。
+1. 登录 [Vercel Dashboard](https://vercel.com/dashboard)
+2. 选择你的项目
+3. 进入项目后,点击 **Settings** 标签
+4. 在左侧菜单中选择 **General**
+5. 向下滚动找到 **Project ID** 部分
+6. 复制显示的项目 ID(格式类似: `prj_xxxxxxxxxxxx`)
 
-## 访问路径
+**获取 API Token (`DEPLOY_PLATFROM_TOKEN`)**
 
-假设部署域名为：
+1. 点击 [Token](https://vercel.com/account/settings/tokens) (前提已经登录vercel账号)
+2. 输入 **Token** 名称(如: `environment-variables-api`)
+3. 选择 **Scope**:
+   - 可以选择 **Full Account** 或特定项目
+   - 建议选择特定项目以提高安全性
+4. 设置过期时间(可选)
+5. 点击 **Create** 创建 Token
+6. **立即复制并保存** Token(只显示一次)
 
-```text
-https://your-app.vercel.app
-```
 
-| 路径 | 说明 |
-| :--- | :--- |
-| `/` | 只读 Logo 展示页 |
-| `/:ADMIN_TOKEN` | 管理后台 |
-| `/:TOKEN/ipv6.m3u` | M3U 订阅 |
-| `/:TOKEN/ipv6.txt` | TXT 订阅 |
-| `/ipv6.json` | JSON 数据 |
-| `/data/logo/文件名.png` | Logo 图片 |
+> ⚠️ **注意**: `DEPLOY_PLATFROM_PROJECT` 和 `DEPLOY_PLATFROM_TOKEN` 是实现后台“保存并部署”功能的关键，请务必正确配置。
 
-## 数据格式
 
-推荐使用 `sources` 保存多线路和备注：
+### 🔗 订阅地址
+| 格式 | 地址 | 说明                          |
+| :--- | :--- |:----------------------------|
+| **M3U** | `TOKEN/ipv6.m3u` | 包含 Logo、EPG ID、分组信息的完整格式    |
+| **TXT** | `TOKEN/ipv6.txt` | 传统的 `频道名,URL` 格式，适合电视盒子壳    |
+| **TXT** | `TOKEN/ipv6.json` | 原始数据    |
 
-```json
-[
-  {
-    "group": "频道分组",
-    "channels": [
-      {
-        "name": "CCTV1 综合",
-        "id": "CCTV1",
-        "logo": "CCTV1",
-        "sources": [
-          {
-            "url": "https://example.com/live.m3u8",
-            "note": "线路 1"
-          }
-        ],
-        "url": [
-          "https://example.com/live.m3u8"
-        ]
-      }
-    ]
-  }
-]
-```
 
-字段说明：
+### ⚙️ 管理后台
+- **访客入口**: `https://your-app.vercel.app/`
+- **管理员入口**: `https://your-app.vercel.app/你的ADMIN_TOKEN`
 
-- `logo`：可填写 `data/logo` 下的文件名，也可填写完整 URL。
-- `sources[].url`：播放源地址。
-- `sources[].note`：线路备注，可留空。
-- `url`：兼容旧数据，系统会自动转换为 `sources`。
-
-## 项目结构
-
-```text
+## 目录结构
+```bash
 .
 ├── api/
-│   ├── logo.js
-│   ├── manage.js
-│   ├── m3u.js
-│   └── txt.js
+│   ├── logo.js      # 处理频道logo展示
+│   ├── m3u.js       # 生成 M3U 订阅
+│   ├── txt.js       # 生成 TXT 订阅
+│   └── manage.js    # 管理后台 UI、拖拽逻辑与 Vercel API 调用
 ├── data/
-│   ├── channels.json
-│   └── logo/
+│   └── logo           # 频道logo文件
+│   └── channels.json  # 默认频道数据（兜底用）
 ├── utils/
-│   ├── config.js
-│   └── helpers.js
-├── package.json
-├── vercel.json
-└── README.md
+│   ├── config.js    # 项目配置与版本管理
+│   └── helpers.js   # 工具函数
+└── vercel.json      # 路由重写规则
 ```
+## ⚖️ 免责声明 (Disclaimer)
 
-## 本地检查
+1. 本项目是一个技术研究项目，旨在探索 Serverless 架构在流媒体调度中的应用。
+2. 本项目**不提供、不存储、不分发**任何视频流媒体文件。
+3. 文档或代码演示中出现的频道仅作为格式参考，使用者需自行配置合法的直播源。
+4. 使用者利用本项目产生的任何后果由使用者自行承担。
 
-```bash
-npm run check
-```
+---
 
-等价于：
+<p align="center">
+  Generated with ❤️ for JPTV Enthusiasts
+</p>
 
-```bash
-node --check api/manage.js
-node --check api/m3u.js
-node --check api/txt.js
-node --check api/logo.js
-node --check utils/config.js
-node --check utils/helpers.js
-```
 
-## Vercel 部署注意事项
 
-- `vercel.json` 已配置 `includeFiles: "data/**"`，确保 `data/channels.json` 和 `data/logo` 会被函数打包。
-- `/data/logo/:file*` 会转发到 `api/logo.js` 读取本地文件。
-- 如果通过 GitHub 自动部署，请确认 `data/` 和 `api/logo.js` 已提交到仓库。
-
-## 免责声明
-
-本项目仅用于个人频道数据管理和格式转换，不提供、不存储、不分发任何视频媒体内容。使用者应自行确保频道源和相关内容的合法性。
