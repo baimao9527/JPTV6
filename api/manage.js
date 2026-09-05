@@ -12,7 +12,7 @@ function escapeText(value = '') {
 }
 
 function generateM3U(channels, baseUrl = '') {
-  let m3u = '#EXTM3U\n';
+  let m3u = '#EXTM3U x-tvg-url="http://e.erw.cc/e.xml.gz"\n';
   channels.forEach((group) => {
     group.channels.forEach((channel) => {
       const logo = buildLogoUrl(channel.logo, baseUrl);
