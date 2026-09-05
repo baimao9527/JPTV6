@@ -13,7 +13,7 @@ export default function handler(req, res) {
 
   const groups = getChannels();
   const requestOrigin = getRequestOrigin(req);
-  let m3u = '#EXTM3U x-tvg-url="http://e.erw.cc/e.xml.gz"\n';
+  let m3u = '#EXTM3U\n';
 
   groups.forEach((group) => {
     group.channels.forEach((channel) => {
